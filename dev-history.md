@@ -1674,141 +1674,39 @@ className={cn(
 ### Problem Solved
 These changes ensure a consistent appearance in dark mode throughout the application. Elements that previously had hardcoded light mode colors now properly respect the dark mode theme, providing better contrast and user experience in dark mode environments. The green Total Savings card now has appropriate dark mode styling while maintaining its thematic green colors.
 
-## [04/18/2024] - Dual-Source Product Comparison Implementation
+## [04/18/2024] - Server-Side Rendering Compatibility Fix
 
-### Implementation Overview
-Enhanced the product comparison system to combine recommendations from both OpenAI's GPT-4 and the Brave Search API, creating a more accurate and comprehensive alternative suggestion system.
+### Issue
+When deploying to Vercel, the application was throwing a "ReferenceError: localStorage is not defined" error during server-side rendering, particularly affecting the analytics page.
 
-### Files Added/Modified
-- **New**: `lib/brave.ts` - Brave Search API integration
-- **Modified**: `app/api/alternatives/route.ts` - Updated to use both APIs
-- **Modified**: `lib/utils.ts` - Updated types to include source information
-- **Modified**: `components/alternatives-dialog.tsx` - Updated to display source information
-- **Modified**: `components/recommendation-engine.tsx` - Updated to handle and display source data
+### Root Cause
+In server-side rendering environments, the Window object and its localStorage property don't exist, causing runtime errors when the code tries to access localStorage.
 
-### Technical Details
+### Solution
+Created a safeLocalStorage utility in lib/utils.ts:
 
-**1. Brave Search API Integration**
 ```typescript
-// lib/brave.ts
-export async function searchAlternatives(expense: Expense): Promise<AlternativeProduct[]> {
-  // Create search query based on expense details
-  const searchQuery = `cheaper alternatives to ${expense.name} ${expense.description || ""}`
-  
-  // Build URL with search parameters
-  const url = new URL(BRAVE_SEARCH_ENDPOINT)
-  url.searchParams.append("q", searchQuery)
-  
-  // Call Brave Search API
-  const response = await fetch(url, {
-    headers: {
-      "Accept": "application/json",
-      "X-Subscription-Token": BRAVE_API_KEY
-    }
-  })
-  
-  // Extract alternatives with pricing information from search results
-  const alternatives = []
-  for (const result of data.web?.results || []) {
-    if (result.description && result.description.includes("$")) {
-      const priceMatch = result.description.match(/\$(\d+(\.\d{1,2})?)/)
-      const price = priceMatch ? parseFloat(priceMatch[1]) : null
-      
-      if (price && price < expense.amount) {
-        alternatives.push({
-          id: `brave-${result.url.substring(0, 20)}`,
-          name: result.title,
-          description: result.description,
-          price: price,
-          url: result.url,
-          savings: expense.amount - price,
-          source: "Brave"
-        })
-      }
-    }
+// Safe localStorage utility for server-side rendering compatibility
+export const safeLocalStorage = {
+  getItem: (key: string): string | null => {
+    if (typeof window === 'undefined') return null
+    return localStorage.getItem(key)
+  },
+  setItem: (key: string, value: string): void => {
+    if (typeof window === 'undefined') return
+    localStorage.setItem(key, value)
+  },
+  removeItem: (key: string): void => {
+    if (typeof window === 'undefined') return
+    localStorage.removeItem(key)
   }
-  
-  return alternatives
 }
 ```
 
-**2. Dual-Source API Implementation**
-```typescript
-// app/api/alternatives/route.ts
-export async function POST(request: Request) {
-  // Get expense details from request
-  const { expense } = await request.json()
-  
-  // Collect alternatives from multiple sources
-  const [aiAlternatives, braveAlternatives] = await Promise.allSettled([
-    findAlternativesWithOpenAI(expense),
-    braveFindAlternatives(expense)
-  ])
-  
-  // Combine and deduplicate alternatives
-  let combinedAlternatives: AlternativeProduct[] = []
-  
-  // Add OpenAI alternatives
-  if (aiAlternatives.status === 'fulfilled') {
-    combinedAlternatives = [...aiAlternatives.value]
-  }
-  
-  // Add Brave Search alternatives (with duplicate detection)
-  if (braveAlternatives.status === 'fulfilled') {
-    braveAlternatives.value.forEach(braveAlt => {
-      const isDuplicate = combinedAlternatives.some(existing => 
-        existing.name.toLowerCase().includes(braveAlt.name.toLowerCase()) ||
-        braveAlt.name.toLowerCase().includes(existing.name.toLowerCase())
-      )
-      
-      if (!isDuplicate) {
-        combinedAlternatives.push(braveAlt)
-      }
-    })
-  }
-  
-  // Sort by highest savings first
-  combinedAlternatives.sort((a, b) => b.savings - a.savings)
-  
-  // Return the top alternatives
-  return NextResponse.json(combinedAlternatives.slice(0, 5))
-}
-```
+Updated key components and utility functions to use safeLocalStorage:
+- app/analytics/page.tsx
+- lib/storage.ts
+- components/savings-summary.tsx
+- Other components that directly use localStorage
 
-**3. User Interface Enhancements**
-- Added source indicators in the alternatives dialog:
-```tsx
-<span className="text-xs text-muted-foreground ml-2">
-  via {alt.source}
-</span>
-```
-
-- Added source information in the recommendation engine:
-```tsx
-<span className="text-xs text-blue-500/70 dark:text-blue-400/70 ml-2">
-  via {expense.alternatives.find(alt => alt.id === expense.selectedAlternative?.id)?.source}
-</span>
-```
-
-### Benefits of This Approach
-1. **Complementary Data Sources**: 
-   - OpenAI provides structured, AI-generated alternatives
-   - Brave Search provides real-world, up-to-date pricing information
-
-2. **Failover Capability**:
-   - If one API fails, the system can still provide alternatives from the other
-   - Promise.allSettled ensures partial results are still returned
-
-3. **Enhanced User Confidence**:
-   - Source indicators help users understand where recommendations come from
-   - Combining multiple sources improves the quality and diversity of suggestions
-
-4. **Better Price Accuracy**:
-   - Web search results often have more current pricing than AI training data
-   - Dynamic price information helps users make better financial decisions
-
-### Future Improvements
-- Add caching to reduce API calls for common searches
-- Implement more sophisticated duplicate detection
-- Add more data sources beyond OpenAI and Brave
-- Create a feedback system for users to rate alternative quality
+This ensures that server-side rendering operations can proceed without crashing, while client-side code still has full access to localStorage functionality.

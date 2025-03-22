@@ -19,7 +19,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts"
-import { formatCurrency, type Expense, getCategoryColors } from "@/lib/utils"
+import { formatCurrency, type Expense, getCategoryColors, safeLocalStorage } from "@/lib/utils"
 import { ExpenseCategoriesChart } from "@/components/analytics/expense-categories-chart"
 import { Progress } from "@/components/ui/progress"
 
@@ -48,8 +48,8 @@ export default function AnalyticsPage() {
   const [categoryColors, setCategoryColors] = useState<Record<string, string>>({})
   
   useEffect(() => {
-    // Load expenses from localStorage
-    const savedExpenses = localStorage.getItem("expenses")
+    // Load expenses from localStorage safely
+    const savedExpenses = safeLocalStorage.getItem("expenses")
     if (savedExpenses) {
       setExpenses(JSON.parse(savedExpenses))
     }

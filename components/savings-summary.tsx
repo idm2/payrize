@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { formatCurrency } from "@/lib/utils"
+import { formatCurrency, safeLocalStorage } from "@/lib/utils"
 import { Card, CardContent } from "@/components/ui/card"
 import { Coins } from "lucide-react"
 import type { Expense } from "@/lib/utils"
@@ -12,7 +12,7 @@ export function SavingsSummary() {
     // Function to calculate total savings
     const calculateTotalSavings = () => {
       try {
-        const savedExpenses = localStorage.getItem("expenses")
+        const savedExpenses = safeLocalStorage.getItem("expenses")
         if (!savedExpenses) return 0
 
         const expenses = JSON.parse(savedExpenses) as Expense[]
