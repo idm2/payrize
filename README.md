@@ -1,29 +1,3 @@
-# Payrize
-
-Payrize is an expense reduction application that helps users identify potential savings by analyzing their spending patterns and suggesting alternatives for products and services.
-
-## Key Features
-- Expense tracking and categorization
-- Smart recommendations for alternatives with better pricing
-- Savings calculator and visualization
-- Multi-API product comparison (OpenAI and Brave Search)
-- Source attribution for price suggestions
-
-## Technology Stack
-- Next.js
-- React
-- Tailwind CSS
-- Chart.js for data visualization
-- OpenAI API for intelligent recommendations
-- Brave Search API for real-world pricing information
-
-## Recent Improvements
-- Enhanced price accuracy with dual API approach
-- Improved source attribution with clear visual indicators
-- Added disclaimers about price variability
-- Security improvements with environment variable configuration
-- Better extraction of pricing information from search results
-
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
