@@ -1,0 +1,177 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
+    --radius: 0.5rem;
+    --selected: 220 14% 24%;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+    --selected: 220 14% 24%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Progress bar gradient */
+.progress-gradient {
+  @apply bg-gradient-to-r from-purple-500 via-purple-400 to-purple-300;
+}
+
+/* Card styles */
+.card {
+  @apply rounded-lg border bg-card text-card-foreground shadow-sm;
+}
+
+/* Month button styles */
+.month-button {
+  @apply flex flex-col items-center justify-center p-3 rounded-lg border transition-colors;
+  @apply hover:bg-accent hover:text-accent-foreground;
+  @apply data-[selected=true]:bg-[hsl(var(--selected))] data-[selected=true]:text-white data-[selected=true]:border-[hsl(var(--selected))];
+}
+
+/* Checkbox styles */
+.checkbox-item {
+  @apply flex items-center space-x-2;
+}
+
+.checkbox-label {
+  @apply text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70;
+}
+
+/* Progress bar container */
+.progress-container {
+  @apply h-2 w-full overflow-hidden rounded-full bg-secondary;
+}
+
+/* Progress bar fill */
+.progress-fill {
+  @apply h-full w-full flex-1 progress-gradient transition-all;
+}
+
+@layer components {
+  .form-group {
+    @apply mb-3;
+  }
+  .form-label {
+    @apply block mb-2 text-sm font-medium text-gray-900 dark:text-white;
+  }
+  .form-control {
+    @apply bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white;
+  }
+  .form-select {
+    @apply bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white;
+  }
+  .form-text {
+    @apply mt-1 text-sm text-gray-500 dark:text-gray-400;
+  }
+  .btn {
+    @apply font-bold py-2 px-4 rounded;
+  }
+  .btn-primary {
+    @apply bg-blue-500 text-white;
+  }
+  .btn-primary:hover {
+    @apply bg-blue-700;
+  }
+  .btn-outline-secondary {
+    @apply bg-transparent text-blue-700 font-semibold border border-blue-500;
+  }
+  .btn-outline-secondary:hover {
+    @apply bg-blue-500 text-white border-transparent;
+  }
+}
+
+/* Remove blue border on focus for form fields */
+input:focus,
+select:focus,
+textarea:focus {
+  @apply outline-none ring-0 border-gray-300 dark:border-gray-600;
+}
+
+/* Add animations for the loading overlay */
+@keyframes wave {
+  0% {
+    d: path('M0,25 C20,10 40,40 60,25 C80,10 100,40 120,25 C140,10 160,40 180,25 C200,10 220,40 240,25');
+  }
+  50% {
+    d: path('M0,25 C20,40 40,10 60,25 C80,40 100,10 120,25 C140,40 160,10 180,25 C200,40 220,10 240,25');
+  }
+  100% {
+    d: path('M0,25 C20,10 40,40 60,25 C80,10 100,40 120,25 C140,10 160,40 180,25 C200,10 220,40 240,25');
+  }
+}
+
+@keyframes moveAlongWave {
+  0% {
+    transform: translate(0%, 0%);
+  }
+  25% {
+    transform: translate(25%, 15%);
+  }
+  50% {
+    transform: translate(50%, -15%);
+  }
+  75% {
+    transform: translate(75%, 15%);
+  }
+  100% {
+    transform: translate(100%, 0%);
+  }
+}
+
+.animate-wave {
+  animation: wave 3s ease-in-out infinite;
+}
+
+.animate-move-along-wave {
+  animation: moveAlongWave 4s ease-in-out infinite;
+}
+

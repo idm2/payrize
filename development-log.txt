@@ -1,0 +1,1406 @@
+# Development Log
+
+## 2024-02-27: Fixing Tailwind CSS Configuration
+
+### Issue
+- Error with Tailwind CSS PostCSS plugin configuration
+- Error message indicated that the PostCSS plugin needed to be updated
+
+### Changes Made
+1. Updated postcss.config.mjs:
+   - Added 'tailwindcss/nesting' plugin
+   - Added autoprefixer plugin
+   - Maintained proper plugin order
+
+### Dependencies Verified
+- tailwindcss: ^3.4.17
+- autoprefixer: ^10.4.20
+- postcss: ^8
+
+### Configuration Files Checked
+1. postcss.config.mjs
+2. tailwind.config.js
+3. package.json
+
+### Next Steps
+- Monitor build process for any additional configuration issues
+- Ensure all Tailwind CSS styles are properly applied
+
+## 2024-02-27: Fixing Module Resolution Issue
+
+### Issue
+- Build error: Module not found: Can't resolve 'class-variance-authority'
+- Error occurred in button.tsx component
+
+### Changes Made
+1. Cleared Next.js cache by removing .next directory
+2. Reinstalled all dependencies with npm install
+3. Resolved peer dependency warnings for @types/react and @types/react-dom
+
+### Dependencies Verified
+- class-variance-authority: ^0.7.1 is present in package.json
+- All dependencies were reinstalled successfully
+
+### Next Steps
+- Test the build process to ensure module resolution is fixed
+- Monitor for any remaining dependency issues
+
+## 2024-02-27: Updating UI Styling to Match Vercel Design
+
+### Issue
+- UI styling needed to match the Vercel design system
+- Components needed visual consistency and polish
+
+### Changes Made
+1. Updated globals.css:
+   - Added CSS variables for the design system colors
+   - Added utility classes for common components
+   - Implemented consistent spacing and typography
+   - Added gradient styles for progress bars
+
+2. Updated TrackerMonthTabs component:
+   - Improved month button styling
+   - Added proper spacing and sizing
+   - Implemented disabled state for future months
+   - Added hover and active states
+
+3. Updated Savings Progress section:
+   - Improved progress bar with gradient
+   - Enhanced checkbox and label styling
+   - Added proper spacing between items
+   - Implemented consistent text sizes
+
+### Components Updated
+1. globals.css
+2. tracker-month-tabs.tsx
+3. app/tracker/page.tsx
+
+### Next Steps
+- Test the UI in different viewport sizes
+- Verify dark mode compatibility
+- Ensure accessibility standards are met
+
+## 2024-02-27: Fixing Month Button Styling and Selection
+
+### Issue
+- Selected month button color needed to be dark gray
+- Month selection functionality was not working correctly
+
+### Changes Made
+1. Updated globals.css:
+   - Added new CSS variable --selected for dark gray color
+   - Updated month button styles to use the new color
+   - Adjusted padding and spacing for better visual appearance
+
+2. Fixed TrackerMonthTabs component:
+   - Added proper month selection logic for current and past months
+   - Disabled future months selection
+   - Updated button styling to use data-selected attribute
+   - Improved visual feedback for different button states
+
+### Components Updated
+1. globals.css
+2. tracker-month-tabs.tsx
+
+### Next Steps
+- Test month selection across different months
+- Verify visual states (selected, past, future, hover)
+- Ensure proper state management when switching months
+
+## 2024-02-27: Enhanced Settings Page
+
+### Issue
+- Settings page needed country selection and suburb auto-suggestion
+- Income earners management was missing
+- Location selection needed improvement
+
+### Changes Made
+1. Updated Settings Page:
+   - Added country selection dropdown
+   - Implemented suburb auto-suggestion combobox
+   - Added income earners management with add/remove functionality
+   - Added total annual income calculation
+   - Implemented settings persistence in localStorage
+
+2. Created SuburbCombobox Component:
+   - Implemented auto-suggestion functionality
+   - Added loading states
+   - Added search functionality
+   - Integrated with country selection
+
+### Components Added/Updated
+1. app/settings/page.tsx
+2. components/suburb-combobox.tsx
+
+### Next Steps
+- Integrate real suburb data API
+- Add form validation
+- Implement proper error handling
+- Add loading states for settings save
+- Test data persistence
+
+## 2024-02-27: Simplified Suburb Autocomplete
+
+### Issue
+- Suburb selection was using a popup combobox which was not user-friendly
+- Need direct autocomplete as user types in the suburb field
+
+### Changes Made
+1. Updated SuburbCombobox Component:
+   - Removed popup/combobox pattern
+   - Implemented direct autocomplete with suggestions below input
+   - Added loading state indicator
+   - Improved keyboard accessibility
+   - Added proper suburb API integration
+
+2. Created API Route for Suburbs:
+   - Added /api/suburbs route for suburb lookups
+   - Integrated with Australian Postcodes API
+   - Added structure for supporting multiple countries
+   - Implemented proper error handling
+
+### Components Updated
+1. components/suburb-combobox.tsx
+2. app/api/suburbs/route.ts
+
+### Next Steps
+- Add API keys to environment variables
+- Test suburb lookups with real API
+- Add support for more countries
+- Implement proper error handling for API failures
+- Add rate limiting for API calls
+
+## 2024-02-27: Fixed Suburb Suggestions
+
+### Issue
+- Suburb suggestions were not working with the Postcodes API
+- Need to implement proper suburb lookup functionality
+
+### Changes Made
+1. Updated API Route:
+   - Switched from Postcodes API to Google Places API
+   - Added proper country code mapping
+   - Improved error handling and response formatting
+   - Added suburb name extraction from Google Places results
+
+2. Enhanced SuburbCombobox Component:
+   - Added debouncing (300ms) to prevent excessive API calls
+   - Improved input handling with proper cleanup
+   - Added proper URL encoding for API parameters
+   - Enhanced error handling and loading states
+
+### Components Updated
+1. app/api/suburbs/route.ts
+2. components/suburb-combobox.tsx
+
+### Next Steps
+- Add GOOGLE_PLACES_API_KEY to environment variables
+- Test suburb suggestions across different countries
+- Add error messages for failed API calls
+- Consider adding caching for frequently searched suburbs
+
+## 2024-02-27: Implemented Expense Alternatives Feature
+
+### Issue
+- Need to implement feature to find cheaper alternatives for user expenses
+- Alternatives should be based on expense details and use OpenAI for suggestions
+- Users should be able to view and select alternatives to track savings
+
+### Changes Made
+1. Created OpenAI Integration:
+   - Added /api/alternatives endpoint
+   - Implemented smart prompting to find relevant alternatives
+   - Added proper error handling and response formatting
+   - Configured GPT-4 Turbo for better suggestions
+
+2. Updated Types:
+   - Added AlternativeProduct type with name, description, price, URL, and savings
+   - Updated Expense type to include alternatives and location
+   - Added selected flag for tracking chosen alternatives
+
+### Components Updated
+1. app/api/alternatives/route.ts (new)
+2. lib/utils.ts
+
+### Next Steps
+- Test the alternatives API with real expense data
+- Implement UI for selecting and tracking chosen alternatives
+- Add loading states for alternative searches
+- Add error handling for failed API calls
+- Consider caching frequently requested alternatives
+
+## 2024-02-27: Updated Alternatives Comparison UI
+
+### Issue
+- Need to show alternatives only for expenses marked as POSSIBLE or VERY WILLING
+- Each alternative should show direct savings comparison
+- Need to display best alternative by default with option to view all
+
+### Changes Made
+1. Updated RecommendationEngine component:
+   - Added filtering for POSSIBLE/VERY WILLING expenses
+   - Implemented best alternative display showing:
+     * Alternative name and description
+     * Current vs alternative price
+     * Monthly savings calculation
+     * Direct link to alternative
+     * Option to view all alternatives
+   - Improved UI layout and organization
+   - Added willingness badge to expense cards
+   - Simplified alternative display to show best option first
+
+### Components Updated
+1. components/recommendation-engine.tsx
+
+### Next Steps
+1. Implement AlternativesDialog component for viewing all alternatives
+2. Add sorting options in the dialog (by price, savings, etc.)
+3. Add filtering options in the dialog
+4. Consider adding user reviews or ratings for alternatives
+5. Add option to mark alternatives as "tried" or "not suitable"
+
+## 2024-02-27: Restored Reduce Tab Functionality
+
+### Issue
+The Reduce tab in the RecommendationEngine component was not functioning. Previously, users could manually adjust expenses using a slider to decrease their spending on items, but this functionality was missing.
+
+### Changes Made
+1. Restored the Reduce tab functionality in the RecommendationEngine component:
+   - Added sliders for each expense to adjust willingness to reduce spending
+   - Implemented three willingness levels: "Not Willing", "Possible", and "Very Willing"
+   - Added visual indicators for each willingness level with appropriate colors
+   - Implemented real-time calculation of potential savings based on willingness
+   - Added a summary card showing total monthly and annual potential savings
+
+2. Implemented the following features:
+   - Slider positions map to willingness levels (0-33: Not Willing, 34-66: Possible, 67-100: Very Willing)
+   - Changes to willingness are saved to localStorage
+   - Potential savings are calculated based on willingness (Very Willing: 80% savings, Possible: 40% savings)
+   - Color-coded badges indicate current willingness level
+
+### Components Updated
+1. components/recommendation-engine.tsx
+
+### Next Steps
+1. Consider adding animations when savings values change
+2. Add ability to set custom reduction percentages for more granular control
+3. Implement a visual savings goal tracker
+4. Add tooltips explaining the savings calculation methodology
+5. Consider adding a "recommended reductions" feature based on spending patterns
+
+## 2024-02-27: Improved Expense Styling and Enhanced Slider Functionality
+
+### Issue
+- Expense cards lacked proper styling and padding
+- Willingness tags needed better color coding
+- The Reduce tab slider only allowed three fixed positions instead of continuous adjustment
+- Users needed more granular control over expense reduction
+
+### Changes Made
+1. Enhanced Expense Card Styling:
+   - Added light gray background to expense cards
+   - Increased padding around card content (p-6)
+   - Added horizontal padding to card containers (px-4)
+   - Improved border styling for better visual separation
+   - Enhanced willingness badges with appropriate background colors and borders
+
+2. Completely Redesigned Slider Functionality:
+   - Changed from willingness-based to direct amount adjustment
+   - Implemented continuous slider from original amount down to $0
+   - Added $5 increment steps for precise control
+   - Added real-time calculation of savings based on adjusted amount
+   - Stored target amounts in localStorage for persistence
+   - Updated savings calculations to use actual target amounts
+
+3. Improved User Interface Text:
+   - Updated instructions to clarify slider functionality
+   - Changed "Current" to "Original" for clarity
+   - Improved savings display formatting
+
+### Components Updated
+1. components/recommendation-engine.tsx
+
+### Next Steps
+1. Add visual indicator of current target amount
+2. Consider adding a reset button to restore original amounts
+3. Add animation when savings values change
+4. Implement a visual savings goal tracker
+5. Add tooltips explaining the adjustment methodology
+
+## 2024-02-27: Enhanced Expense Reduction UI with Better Controls
+
+### Issue
+- Users needed visual feedback on current target amount when adjusting expenses
+- No way to easily reset to original amount after making adjustments
+- Slider range indicators were missing
+- Savings were shown even when no actual reduction was made
+
+### Changes Made
+1. Added Target Amount Display:
+   - Added clear label showing current target amount as slider is adjusted
+   - Implemented real-time updates as the slider moves
+   - Added proper formatting for currency values
+
+2. Added Reset Functionality:
+   - Added a "Reset" button that appears when amount is modified
+   - Button restores the original expense amount
+   - Button only appears when changes have been made
+
+3. Improved Slider UI:
+   - Added min/max range indicators ($0 and original amount)
+   - Only show savings when actual reduction is made
+   - Ensured slider position accurately reflects current target amount
+   - Improved spacing and alignment of UI elements
+
+### Components Updated
+1. components/recommendation-engine.tsx
+
+### Next Steps
+1. Consider adding preset reduction amounts (10%, 25%, 50%)
+2. Add animation when savings values change
+3. Implement a visual savings goal tracker
+4. Add tooltips explaining the adjustment methodology
+5. Consider adding a "recommended reductions" feature based on spending patterns
+
+## 2024-02-27: Implemented Alternative Selection and Savings Plan Integration
+
+### Issue
+- Alternative sections needed a white background for better visual separation
+- Users needed a way to add alternatives to their savings plan
+- The Reduce tab needed to show selected alternatives and lock in their savings
+
+### Changes Made
+1. Enhanced Alternative Display:
+   - Changed alternative sections background to white for better contrast
+   - Added an "Add to Plan" button to each alternative
+   - Implemented visual feedback when an alternative is selected
+
+2. Integrated Alternatives with Savings Plan:
+   - Updated the Expense type to include a selectedAlternative property
+   - Added ID field to AlternativeProduct type for better tracking
+   - Implemented locking of expense amount in Reduce tab when alternative is selected
+   - Added a visual indicator showing which alternative is being used
+   - Added ability to remove selected alternatives
+
+3. Improved User Experience:
+   - Added clear visual feedback when an alternative is selected
+   - Ensured savings calculations reflect selected alternatives
+   - Maintained persistence of selected alternatives in localStorage
+
+### Components Updated
+1. components/recommendation-engine.tsx
+2. lib/utils.ts
+
+### Next Steps
+1. Add ability to select alternatives from the alternatives dialog
+2. Implement sorting of alternatives by savings amount
+3. Add visual indicators for total savings from alternatives
+4. Consider adding a dedicated "Selected Alternatives" view
+5. Add animations when alternatives are selected or removed
+
+## 2024-02-28: Enhanced Alternative Selection and Tracker Integration
+
+### Issue
+- The "Add to Plan" button was missing from the alternatives dialog
+- The button styling needed to match the peach/purple gradient used elsewhere
+- The tracker page was showing all expenses instead of only those with savings plans
+
+### Changes Made
+1. Enhanced Alternatives Dialog:
+   - Added "Add to Plan" button to each alternative in the dialog
+   - Implemented the peach/purple gradient styling for the button
+   - Added visual feedback when an alternative is selected
+   - Ensured selection state persists between dialog openings
+
+2. Updated Recommendation Engine:
+   - Matched the "Add to Plan" button styling with the peach/purple gradient
+   - Improved the visual feedback for selected alternatives
+   - Replaced text "+" with a proper Plus icon for consistency
+
+3. Revamped Tracker Page:
+   - Modified to only show expenses with savings plans (selected alternatives or reduced amounts)
+   - Dynamically loads expenses from localStorage and filters for those with savings
+   - Calculates savings based on the difference between original and target amounts
+   - Added persistence for monthly progress tracking
+   - Improved empty state messaging when no savings goals exist
+
+### Components Updated
+1. components/alternatives-dialog.tsx
+2. components/recommendation-engine.tsx
+3. app/tracker/page.tsx
+
+### Next Steps
+1. Consider adding sorting options for alternatives by savings amount
+2. Add visual indicators for total savings from alternatives in the Compare tab
+3. Implement animations when alternatives are selected or removed
+4. Add a dedicated view for all selected alternatives
+5. Consider adding a feature to compare multiple alternatives side-by-side
+
+## 2024-02-27: UI Enhancements and Analytics Improvements
+
+### Issue
+- Expenses page needed category filtering tabs for better organization
+- Pie chart on dashboard was being cut off at the top
+- Analytics page was using sample data instead of real user data
+- Need more accent colors for better visual distinction
+- Analytics expenses page needed color-coded pie chart slices
+- Analytics savings section needed varying colors for bars based on values
+
+### Changes Made
+1. Added Category Filtering to Expenses Page:
+   - Implemented tabs for filtering expenses by category
+   - Added dynamic tab generation based on user's expense categories
+   - Updated expense totals to reflect filtered expenses
+   - Improved UI with responsive tab layout
+   - Added "All Categories" option to view all expenses
+
+2. Fixed Pie Chart Display Issues:
+   - Added proper margins to prevent chart from being cut off
+   - Reduced outer radius to ensure chart fits within container
+   - Added TypeScript type definitions for chart components
+   - Improved label positioning and readability
+
+3. Enhanced Analytics with Real Data:
+   - Updated analytics page to use actual expense data from localStorage
+   - Implemented dynamic category grouping for pie chart
+   - Generated realistic monthly data based on actual expense totals
+   - Added empty state for when no expenses are present
+   - Improved chart responsiveness and layout
+
+4. Improved Visual Design:
+   - Added more accent colors for better visual distinction
+   - Implemented color-coded pie chart slices based on expense categories
+   - Added varying colors for savings bars based on savings amount
+   - Enhanced tooltips and legends with proper formatting
+   - Improved overall visual consistency
+
+### Components Updated
+1. components/expense-tracker.tsx
+2. components/expense-categories-chart.tsx
+3. app/analytics/page.tsx
+
+### Next Steps
+- Consider adding date filtering for expenses
+- Implement data export for analytics charts
+- Add comparison with previous periods
+- Consider adding more chart types (e.g., stacked bar charts)
+- Implement proper data persistence for historical analytics
+
+## 2024-02-27: Implemented Category Color Selection Feature
+
+### Issue
+- Dashboard pie chart was being cut off at the top
+- Need to allow users to select colors for expense categories
+- Colors should be displayed consistently across charts and graphs
+- Need to provide theme colors from the color palette and custom color options
+
+### Changes Made
+1. Created Color Picker Component:
+   - Added a new ColorPicker component with theme colors from the palette
+   - Implemented ability to select from predefined theme colors
+   - Added custom color input with hex color validation
+   - Included visual preview of selected colors
+
+2. Updated Category Management:
+   - Enhanced CategoryCombobox to include color selection
+   - Added color persistence in localStorage
+   - Implemented color display in category badges
+   - Added visual feedback for selected category colors
+
+3. Enhanced Chart Components:
+   - Updated ExpenseCategoriesChart to use category colors
+   - Fixed pie chart display issues with proper margins
+   - Added TypeScript type definitions for chart components
+   - Implemented fallback colors when no category color is defined
+   - Ensured consistent color usage across all charts
+
+4. Improved Analytics Visualization:
+   - Updated analytics page to use category colors
+   - Enhanced expense list to display category colors
+   - Improved visual consistency across the application
+   - Fixed chart margin issues to prevent cutoff
+
+### Components Added/Updated
+1. components/ui/color-picker.tsx (new)
+2. components/category-combobox.tsx
+3. components/expense-categories-chart.tsx
+4. components/analytics/expense-categories-chart.tsx
+5. components/expense-list.tsx
+6. components/expense-form.tsx
+7. lib/utils.ts
+8. app/analytics/page.tsx
+
+### Next Steps
+- Consider adding color presets for common expense categories
+- Add ability to edit colors for existing categories
+- Implement color themes for dark/light mode
+- Consider adding color accessibility checks
+- Add animation when changing category colors
+
+## 2024-02-27: Category Management and Dashboard Improvements
+
+### Issues
+- Dashboard pie chart was being cut off at the top
+- Charts on DASHBOARD and SAVINGS screens were displaying static data instead of dynamic data
+- No way for users to edit, add, or delete categories and their colors
+- ANALYTICS > TRACKER component needed to display a line graph with two lines
+
+### Changes Made
+1. Added Categories Page:
+   - Created new page at `/categories` for managing expense categories
+   - Implemented ability to add, edit, and delete categories
+   - Added color selection for categories using the ColorPicker component
+   - Ensured changes to categories update all related expenses
+   - Added validation to prevent duplicate categories
+
+2. Updated Sidebar Navigation:
+   - Added "Categories" option in the sidebar with Tags icon
+   - Ensured proper highlighting of active navigation item
+   - Fixed TypeScript types for sidebar navigation items
+
+3. Fixed Dashboard Charts:
+   - Updated ExpenseTrendGraph component to use dynamic data from localStorage
+   - Added proper margins to prevent chart cutoff
+   - Implemented responsive design for better display on all devices
+   - Added projected expenses calculation based on savings goals
+
+4. Enhanced SavingsChart Component:
+   - Fixed type definitions for chart data
+   - Properly typed the FALLBACK_COLORS object
+   - Updated component to use category colors from localStorage
+   - Improved chart rendering with better margins
+
+5. Implemented Analytics Tracker:
+   - Added line graph with two lines: current expenses and projected expenses
+   - Created savings goal progress tracking with progress bars
+   - Implemented dynamic calculation of savings based on expense willingness
+   - Added visual indicators for progress towards savings goals
+
+### Components Added/Updated
+1. app/categories/page.tsx (new)
+2. components/sidebar.tsx
+3. components/expense-trend-graph.tsx
+4. components/savings-chart.tsx
+5. app/analytics/page.tsx
+6. components/dashboard-header.tsx
+7. app/page.tsx
+
+### Next Steps
+- Add ability to bulk import/export categories
+- Implement category filtering in expense views
+- Add category budget limits
+- Enhance category color themes for dark/light mode
+- Add data visualization for category spending trends over time
+
+## 2024-02-28: Fixed Pie Chart Text Color and Tooltip Styling
+
+### Issue
+- Text on pie charts had the same color as the background, making it difficult to read
+- Tooltip styling needed improvement to look more like Bootstrap
+- Dashboard pie chart was not displaying
+- Savings pie chart was not showing
+
+### Changes Made
+1. Fixed Text Color in ExpenseCategoriesChart:
+   - Changed text color to white in both the main and analytics versions
+   - Ensured high contrast against all background colors
+   - Made text more readable on all chart slices
+
+2. Enhanced Tooltip Styling:
+   - Added Bootstrap-like appearance with rounded corners
+   - Implemented subtle box shadow for depth
+   - Improved padding and font weight
+   - Removed outline on focus for cleaner appearance
+   - Made styling consistent across all chart components
+
+3. Fixed Dashboard Pie Chart:
+   - Added ExpenseCategoriesChart to the ExpenseTracker component
+   - Implemented dynamic data generation from expenses
+   - Added proper height and margin settings
+   - Added conditional rendering when categories are available
+
+4. Fixed Savings Chart:
+   - Updated SavingsCalculator to use dynamic data from localStorage
+   - Implemented proper data transformation for the chart
+   - Added conditional rendering when no data is available
+   - Fixed margin issues in the SavingsChart component
+
+### Components Updated
+1. components/analytics/expense-categories-chart.tsx
+2. components/expense-categories-chart.tsx
+3. components/expense-tracker.tsx
+4. components/savings-calculator.tsx
+5. components/savings-chart.tsx
+
+### Next Steps
+- Test charts with different color themes (light/dark mode)
+- Consider adding animations to chart transitions
+- Add click interactions to filter data by category
+- Ensure accessibility standards are met for all charts
+- Consider adding data export functionality for charts
+
+## 2024-02-28: Fixed Pie Chart Alignment and Text Centering
+
+### Issue
+- Pie charts were not properly aligned on various pages
+- Text on pie charts was left-aligned instead of centered
+- Chart containers were too small, causing charts to appear cramped
+- Some charts were marked for removal
+
+### Changes Made
+1. Updated ExpenseTracker Component:
+   - Increased chart container height from 200px to 300px
+   - Added flex centering to properly align the chart
+   - Centered the "Expense Categories" heading
+   - Removed unnecessary duplicate chart
+
+2. Enhanced ExpenseCategoriesChart Component:
+   - Modified the renderCustomizedLabel function to center text
+   - Simplified label text to show only percentages for cleaner appearance
+   - Increased radius multiplier from 0.5 to 0.6 to position text better
+   - Added proper margins to the PieChart component
+
+3. Improved SavingsChart Component:
+   - Increased chart container height from 200px to 300px
+   - Increased chart outer radius from 80px to 120px
+   - Removed negative margin that was causing alignment issues
+   - Added flex centering to properly align the chart
+   - Centered text labels on pie slices
+
+4. Updated SavingsCalculator Component:
+   - Centered the "Savings Breakdown" heading
+   - Increased empty state container height to match chart height
+
+### Components Updated
+1. components/expense-tracker.tsx
+2. components/expense-categories-chart.tsx
+3. components/analytics/expense-categories-chart.tsx
+4. components/savings-chart.tsx
+5. components/savings-calculator.tsx
+
+### Next Steps
+- Test charts at different screen sizes to ensure responsive behavior
+- Consider adding legends below charts for better category identification
+- Explore adding click interactions to pie slices for filtering
+- Consider adding animations to chart transitions
+
+## 2024-02-28: Fixed Analytics Page Pie Chart Alignment and Text Spacing
+
+### Issue
+- The pie chart on the ANALYTICS > EXPENSE page was being cut off at the top
+- The legend text was running into the pie chart
+- The chart was not properly centered vertically
+
+### Changes Made
+1. Updated ExpenseCategoriesChart Component:
+   - Increased top margin from 0px to 30px to prevent chart from being cut off
+   - Increased bottom margin from 20px to 40px to provide more space for the legend
+   - Reduced outerRadius from 140px to 120px for better proportions
+   - Adjusted vertical position (cy) from 45% to 50% for perfect vertical centering
+   - Added proper legend configuration:
+     * Set verticalAlign to "bottom"
+     * Added fixed height of 36px
+     * Increased paddingTop from 10px to 25px to move legend text further down
+
+2. Updated Analytics Page:
+   - Changed the chart container's vertical alignment from `items-start` to `items-center` for proper centering
+
+### Components Updated
+1. components/analytics/expense-categories-chart.tsx
+2. app/analytics/page.tsx
+
+### Next Steps
+- Test the chart alignment at different screen sizes
+- Consider adding responsive adjustments for smaller screens
+- Ensure consistent alignment across all chart components 
+
+## 2024-02-28: Fixed Alternatives Modal Button State and REDUCE Tab Integration - Final Fix
+
+### Issue
+- The alternatives modal was still showing all items as "Added" in green despite previous fixes
+- Selected alternatives were not appearing in the REDUCE tab when added from the alternatives modal
+- When clicking "Add to Plan" on one alternative, all alternatives were showing as "Added"
+
+### Root Cause Analysis
+- The issue with button states was related to the component not properly refreshing after state changes
+- The UI wasn't consistently reflecting the selected state because the component wasn't re-rendering
+- The previous setTimeout workaround wasn't reliable enough to ensure consistent behavior
+
+### Changes Made
+1. Completely rewrote the state management approach:
+   - Added a forceUpdate state variable to trigger re-renders when needed
+   - Implemented a useCallback hook for loadExpenses to prevent unnecessary re-renders
+   - Changed the order of operations to ensure state is updated before UI changes
+   - Removed the setTimeout workaround in favor of a more reliable state-based approach
+
+2. Enhanced the addToSavingsPlan function:
+   - Added logic to get the latest expenses from localStorage before making changes
+   - Ensured willingness is set to at least "Possible" when an alternative is selected
+   - Improved the update flow to ensure localStorage is updated before state changes
+   - Added explicit type casting for better TypeScript support
+
+3. Improved the useEffect dependency array:
+   - Added forceUpdate to the dependency array to ensure the component re-renders when needed
+   - Maintained the early return when the dialog is not open for performance
+
+### Components Updated
+1. components/alternatives-dialog.tsx
+
+### Next Steps
+- Consider adding a visual indicator in the expense list to show which expenses have alternatives selected
+- Add a count of selected alternatives in the UI for better user awareness
+- Test the alternatives selection across different scenarios to ensure consistent behavior
+- Consider adding a "Select All" button to quickly add all alternatives to the plan 
+
+## 2024-03-01: Layout Reorganization for Expenses and Savings Pages
+
+### Issue
+- The layout of the Expenses and Savings pages needed to be reorganized
+- Previous layout had charts spread horizontally at the top and management components at the bottom
+- The SavingsCalculator component was no longer needed
+
+### Changes Made
+1. Reorganized Expenses Page Layout:
+   - Changed from a top/bottom layout to a left/right column layout
+   - Left Column: Pie chart at the top, Bar graph below it
+   - Right Column: Expense Tracker
+
+2. Reorganized Savings Page Layout:
+   - Changed from a top/bottom layout to a left/right column layout
+   - Left Column: Pie chart at the top, Bar graph below it
+   - Right Column: Savings Options
+   - Removed the SavingsCalculator component
+
+3. Improved Visual Organization:
+   - Used flex-col with gap-6 to stack charts vertically in the left column
+   - Maintained the same card styling for consistency
+   - Ensured proper spacing between components
+
+### Components Updated
+1. app/expenses/page.tsx
+2. app/savings/page.tsx
+
+### Next Steps
+1. Ensure the vertical stacking of charts works well on mobile devices
+2. Consider adding a toggle to switch between different chart views
+3. Review the spacing between stacked charts for optimal visual hierarchy 
+
+## 2024-03-01: Fixed Alternatives Modal "Add to Plan" Button
+
+### Issue
+- The "Add to Plan" button in the alternatives modal popup was not working properly
+- When clicking on "Add to Plan" in the alternatives modal, nothing was happening
+- The modal was not closing after adding an alternative to the plan
+
+### Changes Made
+1. Updated the AlternativesDialog Component:
+   - Modified the `addToSavingsPlan` function to close the modal after adding an alternative
+   - Added a conditional check to only close the modal when adding a new alternative (not when toggling off)
+   - Added a small delay (300ms) before closing the modal to allow the user to see the selection
+   - Maintained the existing functionality for updating localStorage and dispatching events
+
+### Components Updated
+1. components/alternatives-dialog.tsx
+
+### Next Steps
+1. Test the alternatives selection across different scenarios to ensure consistent behavior
+2. Consider adding a visual indicator or toast notification when an alternative is successfully added
+3. Add animations for smoother transitions when adding alternatives 
+
+## 2024-03-01: Dashboard Page Layout Reorganization
+
+### Issue
+- The dashboard layout needed to be reorganized into a more logical quadrant structure
+- The SavingsCalculator component was no longer needed
+- Charts from the Savings page needed to be reused on the dashboard for consistency
+
+### Changes Made
+1. Updated Dashboard Page Layout:
+   - Implemented a 2x2 grid layout with four distinct quadrants
+   - Top Left: Added Savings Pie Chart (same component as on the savings page)
+   - Top Right: Added Expense/Savings Bar Graph (same component as on the savings page)
+   - Bottom Left: Moved Expense Tracker (previously in top left)
+   - Bottom Right: Added Savings Options (RecommendationEngine)
+   - Removed the SavingsCalculator component completely
+   - Removed the ExpenseTrendGraph component
+
+2. Improved Component Organization:
+   - Added proper Card wrappers with headers for the Expense Tracker and Savings Options
+   - Used consistent spacing with gap-6 between components
+   - Added clear comments to indicate the purpose of each quadrant
+   - Ensured consistent styling across all components
+
+### Components Updated
+1. app/page.tsx
+
+### Next Steps
+1. Test the dashboard layout on different screen sizes
+2. Consider adding a summary card showing total expenses and savings
+3. Add refresh functionality to update all components simultaneously
+4. Consider adding animations for chart transitions 
+
+## 2024-03-01: Added Prominent Savings Summary to Dashboard
+
+### Issue
+- The dashboard needed a prominent display of total savings at the top
+- Users needed to see both monthly and annual savings in an eye-catching format
+- Savings information was scattered across different components
+
+### Changes Made
+1. Created New SavingsSummary Component:
+   - Implemented in components/savings-summary.tsx
+   - Calculates total savings from both selected alternatives and reduced expense amounts
+   - Displays monthly and annual savings in prominent green text
+   - Uses a visually distinct card with green styling and Coins icon
+   - Updates automatically when expenses are modified
+
+2. Updated Dashboard Layout:
+   - Added the SavingsSummary component at the top of the dashboard in app/page.tsx
+   - Positioned it above the grid layout for maximum visibility
+   - Added proper spacing with margin-bottom
+
+### Components Added/Updated
+1. components/savings-summary.tsx (new)
+2. app/page.tsx
+
+### Next Steps
+1. Consider adding a savings goal feature to track progress
+2. Add animations when savings values change
+3. Consider adding a breakdown of savings by category
+4. Add an option to view historical savings data 
+
+## 2024-03-01: Implemented Mobile Responsiveness Across the App
+
+### Issue
+- The application was not fully optimized for mobile devices
+- UI elements were too large or poorly spaced on small screens
+- Charts and graphs were not properly sized for mobile viewing
+- Text and buttons were difficult to read or interact with on small screens
+
+### Changes Made
+1. Enhanced Dashboard Layout:
+   - Implemented proper stacking of grid items on mobile screens
+   - Adjusted spacing and padding to be responsive based on screen size
+   - Used smaller text sizes on mobile for better readability
+   - Improved button sizes and spacing for touch interactions
+
+2. Improved Chart Components:
+   - Reduced chart heights on mobile screens
+   - Adjusted font sizes in charts for better mobile readability
+   - Implemented responsive legend positioning
+   - Added proper text truncation for long labels
+   - Ensured tooltips are properly sized and positioned on mobile
+
+3. Enhanced SavingsSummary Component:
+   - Implemented stacking layout on small screens
+   - Adjusted text alignment for better mobile readability
+   - Added proper spacing between elements
+   - Ensured currency values are properly sized on all screens
+
+4. Optimized UI Components:
+   - Made tabs more compact on mobile with smaller text and icons
+   - Improved button text and icon sizing for mobile
+   - Added responsive padding to cards and containers
+   - Implemented proper text truncation for long content
+   - Ensured proper spacing between stacked elements
+
+### Components Updated
+1. app/page.tsx - Main dashboard layout
+2. components/savings-summary.tsx - Savings summary card
+3. components/savings-pie-chart.tsx - Pie chart component
+4. components/savings-line-graph.tsx - Bar graph component
+5. components/expense-tracker.tsx - Expense tracking component
+6. components/recommendation-engine.tsx - Recommendation engine tabs
+7. components/dashboard-shell.tsx - Overall layout container
+8. components/dashboard-header.tsx - Page header with buttons
+
+### Next Steps
+1. Test the responsive layout on various device sizes and orientations
+2. Consider implementing a dedicated mobile navigation menu
+3. Add touch-friendly interactions for charts (pinch to zoom, etc.)
+4. Optimize image loading for mobile data connections
+5. Consider implementing progressive web app (PWA) features 
+
+## 2024-03-01: Added Financial Trends Line Graph
+
+### Issue
+- Dashboard lacked a comprehensive visualization showing the relationship between income, expenses, and savings over time
+- Users needed a clearer way to see their financial progress and how savings impact their overall financial picture
+- No existing component showed all three key financial metrics (income, expenses, savings) together
+
+### Changes Made
+1. Created a new component `components/financial-trends-graph.tsx`:
+   - Implemented a line graph showing Total Income, Total Expenses, and Expenses Saved
+   - Added data generation for the past 6 months with realistic variations
+   - Included responsive design for mobile and desktop viewing
+   - Added custom tooltip for detailed information on hover
+
+2. Updated dashboard layout in `app/page.tsx`:
+   - Added the new FinancialTrendsGraph component below the SavingsSummary
+   - Maintained proper spacing and responsive behavior
+   - Ensured consistent styling with other dashboard components
+
+### Components Added/Updated
+- New: `components/financial-trends-graph.tsx`
+- Updated: `app/page.tsx`
+
+### Data Integration
+- Integrated with existing income data from the settings page
+- Connected to expense and savings data from localStorage
+- Implemented event listeners to update the graph when data changes
+
+### Next Steps
+- Consider adding date range selection for viewing different time periods
+- Add option to toggle between monthly and annual views
+- Implement data export functionality for the graph data
+- Add goal-setting functionality to track progress against financial goals 
+
+## 2024-03-01: Updated Financial Trends Graph Layout and Colors
+
+### Issue
+- The Financial Trends graph needed to be repositioned below the Savings by Category and Expense Savings Comparison charts
+- The line colors needed to match the existing color scheme (aqua, purple, pink) for visual consistency
+- The current layout didn't match the desired dashboard organization
+
+### Changes Made
+1. Updated Dashboard Layout in `app/page.tsx`:
+   - Moved the Financial Trends graph to a middle row position below the two chart columns
+   - Organized the dashboard into three distinct sections:
+     * Top row: SavingsSummary
+     * Second row: SavingsPieChart and SavingsLineGraph in two columns
+     * Middle row: FinancialTrendsGraph spanning full width
+     * Bottom row: ExpenseTracker and RecommendationEngine in two columns
+   - Added proper spacing and margins between rows
+
+2. Updated Line Colors in `components/financial-trends-graph.tsx`:
+   - Changed Total Income line from blue (#3B82F6) to aqua/teal (#10B981)
+   - Changed Total Expenses line from red (#EF4444) to purple (#9333EA)
+   - Changed Expenses Saved line from green (#10B981) to pink (#EC4899)
+   - Maintained consistent stroke width and dot sizes
+
+### Components Updated
+- Updated: `app/page.tsx`
+- Updated: `components/financial-trends-graph.tsx`
+
+### Visual Improvements
+- Created a more logical flow of information on the dashboard
+- Improved visual consistency with the existing color scheme
+- Enhanced the overall user experience with better organization of related components
+
+### Next Steps
+- Consider adding interactive features to the Financial Trends graph
+- Add ability to filter the graph data by time period
+- Consider adding data export functionality 
+
+## 2024-03-01: Added PayRize Wizard
+
+### Issue
+- Need for a user-friendly setup wizard to guide new users through initial app configuration
+
+### Changes Made
+- Created a new component `components/payrize-wizard.tsx` for a multi-step setup wizard
+- Added a wizard button to the dashboard header in `components/dashboard-header.tsx`
+- Implemented 5 steps: name, income, personal expenses, business expenses, and savings goal
+- Added data persistence to localStorage for all user inputs
+- Ensured proper form validation and user feedback throughout the process
+
+### Components Updated
+1. components/payrize-wizard.tsx
+2. components/dashboard-header.tsx
+
+### Next Steps
+- Consider adding data import/export functionality
+- Add ability to edit existing data through the wizard
+- Implement more sophisticated savings recommendations based on user inputs 
+
+## 2024-03-02: Enhanced PayRize Wizard with Automatic Alternative Selection
+
+### Issue
+- The PayRize Wizard was collecting expense details but not automatically finding competitive alternatives
+- Users had to manually go to the Savings Options section to find alternatives after setup
+- The wizard wasn't fully leveraging the AI capabilities to provide immediate value
+
+### Changes Made
+1. Added Automatic Alternative Finding:
+   - Implemented API integration to fetch alternatives for expenses with detailed descriptions
+   - Added logic to automatically select the best alternative (highest savings) for each expense
+   - Updated the expense data structure to include alternatives and selected alternatives
+   - Added progress tracking during the alternative finding process
+
+2. Enhanced User Experience:
+   - Added real-time progress indicator during alternative finding
+   - Updated success message to indicate that alternatives have been found
+   - Disabled the "Start Exploring" button while alternatives are being processed
+   - Improved the completion screen with more detailed information
+
+### Components Updated
+1. components/payrize-wizard.tsx
+
+### Next Steps
+- Consider adding a summary of found alternatives on the completion screen
+- Implement a way to review and change selected alternatives before finalizing
+- Add more sophisticated alternative selection logic based on user preferences
+- Consider adding a way to skip the alternative finding process for users who prefer manual selection 
+
+## 2024-03-02: Fixed PayRize Wizard Duplicate Key Issue
+
+### Issue
+- Clicking "Get Your PayRize" button in the final step of the wizard wasn't working
+- Console error showed: "Encountered two children with the same key" warning
+- The issue was caused by duplicate IDs when combining existing and new expenses
+
+### Root Cause Analysis
+- When adding new expenses, the code was using `expense.id || crypto.randomUUID()` which could result in duplicate IDs
+- The code wasn't checking if the ID already existed in the existing expenses array
+- This caused React to encounter duplicate keys in the component tree, preventing proper rendering
+
+### Changes Made
+1. Improved ID Generation Logic:
+   - Created a Set of existing IDs for quick lookup
+   - Implemented a more robust ID generation approach that ensures uniqueness
+   - Added checks to prevent ID collisions between existing and new expenses
+   - Added checks to prevent ID collisions between personal and business expenses
+
+2. Enhanced Error Prevention:
+   - Added comments explaining the ID generation logic
+   - Ensured IDs are tracked as they're generated to prevent duplicates within the same batch
+   - Maintained the existing functionality while improving reliability
+
+### Components Updated
+1. components/payrize-wizard.tsx
+
+### Next Steps
+- Consider adding more robust error handling for localStorage operations
+- Add logging to track ID generation in development environments
+- Consider implementing a more sophisticated ID management system for larger datasets 
+
+## 2024-03-02: Fixed Infinite Loop in Expense Creation
+
+### Issue
+- The PayRize Wizard was creating countless duplicate expenses
+- The automatic alternative finding process was causing an infinite loop
+- Each time alternatives were found, it was triggering more expense creation
+
+### Root Cause Analysis
+- The combination of automatic alternative finding in the wizard and automatic fetching in the recommendation engine created a feedback loop
+- When alternatives were found and saved, it triggered the `expensesUpdated` event
+- This event caused the recommendation engine to reload expenses and fetch more alternatives
+- The process continued in an infinite loop, creating duplicate expenses
+
+### Changes Made
+1. **Emergency Fix**:
+   - Cleared all existing expenses to break the loop
+   - Temporarily disabled automatic alternative finding in the PayRize Wizard
+   - Temporarily disabled automatic alternative fetching in the recommendation engine
+   - Modified the expense saving logic to start with an empty array instead of loading existing expenses
+
+2. **Preventive Measures**:
+   - Added clear user feedback about the clearing of expenses
+   - Implemented a more controlled approach to expense creation and alternative finding
+
+### Components Updated
+1. components/payrize-wizard.tsx
+2. components/recommendation-engine.tsx
+
+### Next Steps
+- Implement a more robust event handling system to prevent feedback loops
+- Add safeguards to detect and prevent excessive expense creation
+- Consider implementing a debounce mechanism for alternative fetching
+- Re-enable automatic alternative finding with proper safeguards 
+
+## 2024-03-02: Added Bulk Expense Clearing Feature
+
+### Issue
+- Despite previous fixes, there were still many duplicate expenses in the system
+- User needed a way to quickly clear all expenses at once
+- The existing solution required manual deletion of each expense
+
+### Implementation
+1. **Created a Clear Expenses Button Component**:
+   - Added a new component `clear-expenses-button.tsx` with a destructive button
+   - Implemented functionality to clear all expenses from localStorage
+   - Added toast notifications for success and error states
+   - Dispatched the `expensesUpdated` event to notify other components
+
+2. **Integrated with Dashboard Header**:
+   - Added the ClearExpensesButton to the dashboard header for easy access
+   - Updated the DashboardHeader component to include the button in the actions area
+   - Fixed prop types and interfaces to ensure proper component integration
+
+3. **Fixed Related Components**:
+   - Updated the ExpenseTracker component to properly use the DashboardHeader
+   - Ensured the ImportCSVModal component works correctly with the updated header
+
+### Components Updated
+1. components/clear-expenses-button.tsx (new)
+2. components/dashboard-header.tsx
+3. components/expense-tracker.tsx
+
+### Next Steps
+- Consider adding a confirmation dialog before clearing all expenses
+- Add analytics to track how often users need to clear expenses
+- Implement a more robust data management system to prevent the need for bulk clearing 
+
+## 2024-03-02: Automatic Alternative Selection Feature
+
+### Issue: Users had to manually select alternatives for their expenses, which created friction in the savings process.
+
+### Implementation:
+- Modified the recommendation engine to automatically select the best alternative (highest savings) for each expense
+- Added a new function `addBestAlternativeToPlan` that identifies the best alternative and updates the expense
+- Updated the `fetchAlternatives` function to automatically call this function when alternatives are found
+- Fixed TypeScript type issues to ensure code quality
+- Added a small delay to ensure alternatives are saved before selection
+
+### This enhancement streamlines the user experience by automatically selecting the most cost-effective alternatives, helping users achieve their savings goals more efficiently without manual intervention.
+
+### Components Updated
+1. components/recommendation-engine.tsx
+
+### Next Steps
+- Consider adding a visual indicator in the expense list to show which expenses have alternatives selected
+- Add a count of selected alternatives in the UI for better user awareness
+- Test the alternatives selection across different scenarios to ensure consistent behavior
+- Consider adding a "Select All" button to quickly add all alternatives to the plan 
+
+## 2024-03-03: PayRize Wizard UI Improvements
+
+### Issue
+- The PayRize Wizard needed several UI improvements to enhance user experience
+- The "Income Source 1" label was confusing for users
+- The "Add Expense" button didn't match the gradient styling of other primary buttons
+- Users needed better feedback during the processing of their PayRize setup
+
+### Implementation
+- Changed "Income Source 1" label to "Income Amount" for clarity
+- Applied the purple/pink gradient styling to the "Add Expense" and "Add Business Expense" buttons
+- Added an animated loading modal with the message "We're sorting out your PayRize" during processing
+- The loading modal appears when the user clicks "Get Your PayRize" and remains visible until processing completes
+
+### Benefits
+- Improved UI consistency with gradient styling across primary action buttons
+- Enhanced user experience with clearer labeling for income fields
+- Better feedback during processing to reduce perceived wait time
+- Visual confirmation that the system is working on their request
+
+### Components Updated
+- components/payrize-wizard.tsx
+
+### Next Steps
+- Consider adding progress indicators for each step of the processing
+- Add confetti animation when the PayRize setup is complete
+- Implement a summary of found alternatives on the completion screen 
+
+## 2024-03-03: Full-Screen Loading Animation for PayRize Wizard
+
+### Issue
+- The toast notification loading modal was not engaging enough
+- Users needed a more visually appealing loading experience
+- The loading indicator needed to cover the entire screen to prevent user interaction during processing
+
+### Implementation
+- Created a full-screen overlay with a purple-to-pink gradient background (matching brand colors)
+- Added an animated wave path with a coin icon that moves along the wave
+- Implemented custom CSS animations for both the wave and the coin movement
+- Replaced the toast notifications with the new full-screen loading overlay
+- Added "Please wait while we prepare your PayRize" text
+
+### Benefits
+- Provides a more engaging and visually appealing loading experience
+- Prevents user interaction during processing with a full-screen overlay
+- Creates a memorable branded experience with animations and brand colors
+- Clearly communicates to users that their PayRize is being prepared
+- Reduces perceived wait time with an engaging animation
+
+### Components Updated
+- components/payrize-wizard.tsx
+- app/globals.css (added animation keyframes)
+
+### Next Steps
+- Consider adding progress indicators to show different stages of processing
+- Add confetti animation when the PayRize setup is complete
+- Implement a summary screen showing the alternatives found 
+
+## 2024-03-03: Loading Animation Improvements for PayRize Wizard
+
+### Issue
+- The loading animation was being obscured by the modal dialog
+- The animation didn't properly close after loading completed
+- Users weren't automatically redirected to the savings screen after processing
+
+### Implementation
+- Modified the PayRize Wizard to close the modal dialog immediately when loading starts
+- Added automatic navigation to the savings screen after processing completes
+- Ensured the loading overlay is properly hidden when processing is complete
+- Fixed both the processWizardData and handleSubmit functions to handle these changes
+
+### Benefits
+- Users can now see the full-screen loading animation without obstruction
+- Provides a seamless transition from loading to the savings screen
+- Creates a more intuitive and engaging user experience
+- Eliminates the need for users to manually navigate after setup
+
+### Components Updated
+- components/payrize-wizard.tsx
+
+### Next Steps
+- Add a brief success message or animation before redirecting to the savings screen
+- Consider adding a progress bar to show processing status
+- Implement a confetti animation when processing completes 
+
+## 2024-03-03: CSV Button Styling Updates
+
+### Issue
+- CSV buttons on the Dashboard and Expenses pages had inconsistent styling
+- Colored CSV buttons in the Expense Tracker column needed to be removed
+- Client requested charcoal-colored CSV buttons for a more consistent look
+
+### Implementation
+- Updated CSV buttons on the Dashboard page to use variant="outline" (charcoal color)
+- Updated CSV buttons on the Expenses page to match the Dashboard styling
+- Removed the DashboardHeader component from the Expense Tracker to eliminate duplicate CSV buttons
+- Created a custom header for the Expense Tracker with just the title and Add Expense button
+
+### Benefits
+- Consistent styling across all CSV buttons in the application
+- Cleaner interface with no duplicate CSV buttons
+- Better adherence to the design system with consistent button styling
+
+### Components Updated
+- components/dashboard-header.tsx
+- app/expenses/page.tsx
+- components/expense-tracker.tsx
+
+### Next Steps
+- Consider adding tooltips to CSV buttons to explain their functionality
+- Review other buttons in the application for consistent styling 
+
+## 2024-03-03: Dark Mode Styling Improvements
+
+### Issue
+- White backgrounds were visible in dark mode on the Savings page
+- Chart tooltips and card elements had light backgrounds that didn't adapt to dark mode
+- Badge styling was inconsistent between light and dark modes
+
+### Implementation
+- Updated chart tooltips in SavingsPieChart and SavingsLineGraph to use theme-aware backgrounds
+- Modified the RecommendationEngine component to use proper dark mode styling
+- Updated badge styling to use semi-transparent colors that work in both light and dark modes
+- Replaced hardcoded background colors with theme variables (bg-card, border-border)
+- Added specific dark mode color variants for text and backgrounds
+
+### Benefits
+- Consistent dark mode experience across the entire application
+- Better contrast and readability in dark mode
+- Reduced eye strain for users in dark environments
+- More professional appearance with consistent styling
+
+### Components Updated
+- components/savings-pie-chart.tsx
+- components/savings-line-graph.tsx
+- components/recommendation-engine.tsx
+
+### Next Steps
+- Review other components for dark mode compatibility
+- Consider adding a theme toggle in the user settings
+- Test the dark mode on different devices and screen sizes 
+
+[04/18/2024] - Dark Mode Fixes
+
+Fixed dark mode styling issues in multiple components:
+1. Updated alternatives-dialog.tsx to use proper dark mode background colors for alternative cards
+2. Updated payrize-wizard.tsx to fix dark mode styling:
+   - Added dark mode colors to the coin icon in the LoadingOverlay component
+   - Fixed the blue information boxes in both personal and business expense sections to use appropriate dark mode colors
+   - Used dark:bg-blue-950/30 for panels and dark:text-blue-400 for text to ensure proper contrast in dark mode
+
+These changes ensure a consistent dark mode experience throughout the application, specifically in the expense entry wizards and alternative suggestion dialogs. 
+
+[04/18/2024] - More Dark Mode Fixes
+
+Updated the Total Savings card to properly support dark mode:
+1. Changed the SavingsSummary component to use dark mode compatible colors:
+   - Added dark:bg-green-950/30 for the card background with transparency
+   - Updated border color to dark:border-green-900/50 for subtle border in dark mode
+   - Changed text colors to dark:text-green-300 and dark:text-green-400 for better contrast
+   - Updated the Coins icon color to dark:text-green-400
+
+These changes ensure the Total Savings card at the top of the dashboard looks good in dark mode, with appropriate contrast and visibility while maintaining the green color theme. 
+
+[04/18/2024] - Product Comparison Methodology
+
+The application uses OpenAI's GPT-4 to find product alternatives rather than directly searching the internet. The process works as follows:
+
+1. When a user adds an expense with a detailed description, the app sends this information to the `/api/alternatives` endpoint
+2. This endpoint constructs a detailed prompt that includes:
+   - The expense name, description, price, category, and location
+   - Requirements for finding 3 cheaper alternatives with specific details
+   - Formatting instructions to return structured JSON data
+
+3. The endpoint then calls OpenAI's API (specifically the gpt-4-turbo-preview model) with the prompt and a system message that positions the AI as a "cost-optimization expert"
+
+4. The AI generates alternatives based on its training data, including:
+   - Product/service names
+   - Brief descriptions highlighting key features
+   - Lower prices than the current expense
+   - URLs to purchase/learn more
+   - Estimated savings compared to the current expense
+
+5. The results are returned in a standardized JSON format and displayed to the user
+
+This approach allows the application to suggest alternatives without needing to integrate with multiple comparison APIs or web scraping services. The quality of the suggestions depends on the detail provided in the expense descriptions and the AI's knowledge of products and services. 
+
+[04/18/2024] - Enhanced Product Comparison with Brave Search API
+
+Implemented a dual-source approach for finding product alternatives by combining OpenAI and Brave Search API:
+
+1. Created a new file lib/brave.ts with a searchAlternatives function that:
+   - Makes calls to the Brave Search API with the expense details
+   - Extracts pricing information from search results using regex
+   - Formats the alternatives to match the existing AlternativeProduct type
+   - Adds source information to identify where each alternative came from
+
+2. Updated the /api/alternatives endpoint to:
+   - Make simultaneous calls to both OpenAI and Brave Search API using Promise.allSettled
+   - Combine results from both sources while removing potential duplicates
+   - Sort alternatives by highest savings first
+   - Return the top 5 alternatives (increased from 3)
+
+3. Modified the application to display source information:
+   - Updated AlternativeProduct and Expense types to include source field
+   - Added source displays in the alternatives dialog and recommendation engine
+   - Enhanced the addToSavingsPlan and addBestAlternativeToPlan functions to preserve source data
+
+This enhancement provides multiple benefits:
+- More accurate and up-to-date pricing information from real-world search results
+- Broader range of alternative options by combining AI-generated and web-scraped data
+- Increased user trust by showing where recommendations are coming from
+- Creates a multi-layered approach that's more resilient to API failures
+
+[04/18/2024] - Enhanced Price Accuracy and Source Attribution
+
+Significantly improved the accuracy of product pricing information and source transparency:
+
+1. Brave Search API improvements:
+   - Enhanced search query construction with more targeted terms
+   - Implemented sophisticated price extraction with multiple regex patterns
+   - Added validation to ensure prices are reasonable (not suspiciously low)
+   - Improved product name cleaning to provide clearer alternative names
+   - Added description formatting to focus on the most relevant information
+
+2. OpenAI API enhancements:
+   - Updated prompt to emphasize the need for accurate, specific pricing
+   - Added detailed guidelines for product suggestions
+   - Reduced temperature to 0.2 for more factual responses
+   - Improved system message to position the AI as a pricing expert
+
+3. UI improvements:
+   - Made source attribution more prominent with distinctive badges
+   - Added "Prices may vary" disclaimer in the alternatives dialog
+   - Improved visual distinction of data sources
+
+4. Security improvements:
+   - Moved API key to environment variables
+   - Added proper error handling for missing API keys
+
+These changes significantly improve the reliability and transparency of the pricing information shown to users, allowing them to make more informed decisions about potential savings opportunities.

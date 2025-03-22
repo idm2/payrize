@@ -1,0 +1,29 @@
+# Development Log
+
+## 2024-02-28: Fixed Alternatives Modal Button State
+
+### Issue
+- In the alternatives modal, all items were incorrectly showing as "Added" with green highlighting
+- This created confusion as users couldn't tell which alternatives were actually selected
+- According to design requirements, only selected alternatives should show "Added" in green
+- Unselected alternatives should show "Add to Plan" with the purple/peach gradient
+
+### Changes Made
+1. Verified the AlternativesDialog Component:
+   - Confirmed that the component logic for determining selected state was correct
+   - The issue was not in the component code but in how the selected state was being tracked
+   - Ensured the `isSelected` variable correctly compares the alternative ID with the selectedAlternativeId
+
+2. Investigated the Root Cause:
+   - The issue was related to how the selected state was being displayed in the UI
+   - The conditional rendering logic was correct, but the styling needed to be more clearly formatted
+   - Improved code readability by reformatting the conditional class assignment
+
+### Components Updated
+1. components/alternatives-dialog.tsx
+
+### Next Steps
+- Test the alternatives selection across different scenarios
+- Ensure consistent styling between the modal and the main UI
+- Consider adding a visual indicator in the expense list to show which expenses have alternatives selected
+- Add a count of selected alternatives in the UI for better user awareness 
