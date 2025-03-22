@@ -284,7 +284,7 @@ export default function AnalyticsPage() {
                 <div className="space-y-8">
                   {useMemo(() => {
                     // Load savings goals from localStorage
-                    const savedGoals = localStorage.getItem("savingsGoals")
+                    const savedGoals = safeLocalStorage.getItem("savingsGoals")
                     const savingsGoals = savedGoals ? JSON.parse(savedGoals) : []
                     
                     if (!savingsGoals.length) {
