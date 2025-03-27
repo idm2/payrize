@@ -20,22 +20,14 @@ import { Label } from "@/components/ui/label"
 import { ColorPicker, THEME_COLORS } from "@/components/ui/color-picker"
 
 interface CategoryComboboxProps {
-  value: string
+  value: string | undefined
   onChange: (value: string) => void
   onColorChange?: (category: string, color: string) => void
 }
 
-export function CategoryCombobox({ value, onChange, onColorChange }: CategoryComboboxProps) {
+export function CategoryCombobox({ value = "", onChange, onColorChange }: CategoryComboboxProps) {
   const [open, setOpen] = React.useState(false)
-  const [categories, setCategories] = React.useState([
-    "Entertainment",
-    "Business",
-    "Health",
-    "Food",
-    "Transportation",
-    "Utilities",
-    "Insurance",
-  ])
+  const [categories, setCategories] = React.useState<string[]>([])
   const [showNewCategoryDialog, setShowNewCategoryDialog] = React.useState(false)
   const [newCategory, setNewCategory] = React.useState("")
   const [newCategoryColor, setNewCategoryColor] = React.useState(THEME_COLORS[0].value)
@@ -47,30 +39,66 @@ export function CategoryCombobox({ value, onChange, onColorChange }: CategoryCom
     return THEME_COLORS[randomIndex].value
   }
 
-  // Load category colors from localStorage and assign random colors to categories without colors
+  // Load categories and colors from localStorage
   React.useEffect(() => {
+    // Default categories with colors to use when no categories are found
+    const defaultCategories = [
+      "Entertainment",
+      "Business",
+      "Health",
+      "Food",
+      "Transportation",
+      "Utilities", 
+      "Insurance",
+      "Housing",
+      "Personal",
+      "Debt",
+      "Savings",
+      "Education",
+      "Other"
+    ]
+    
+    // Get all expenses to extract unique categories
+    const savedExpenses = localStorage.getItem("expenses")
+    let userCategories: string[] = []
+    
+    if (savedExpenses) {
+      try {
+        const expenses = JSON.parse(savedExpenses) as any[]
+        userCategories = Array.from(new Set(expenses
+          .filter(expense => expense && expense.category)
+          .map((expense: any) => expense.category)))
+          .filter(Boolean) as string[]
+      } catch (error) {
+        console.error("Error parsing expenses:", error)
+      }
+    }
+    
+    // Get category colors
     const colors = getCategoryColors()
     
-    // Assign random colors to default categories that don't have colors
-    const updatedColors = { ...colors }
-    let colorsUpdated = false
+    // Combine default categories with user categories
+    const combinedCategories = Array.from(new Set([
+      ...defaultCategories,
+      ...userCategories
+    ]))
     
-    categories.forEach(category => {
+    // Ensure all categories have colors
+    const updatedColors = { ...colors }
+    combinedCategories.forEach(category => {
       if (!updatedColors[category]) {
-        updatedColors[category] = getRandomColor()
-        colorsUpdated = true
+        const randomColor = getRandomColor()
+        updatedColors[category] = randomColor
+        saveCategoryColor(category, randomColor)
       }
     })
     
-    // Save updated colors if any were added
-    if (colorsUpdated) {
-      Object.entries(updatedColors).forEach(([category, color]) => {
-        saveCategoryColor(category, color)
-      })
-    }
+    // Convert to array and sort
+    setCategories(combinedCategories.sort())
     
+    // Load category colors
     setCategoryColors(updatedColors)
-  }, [categories])
+  }, [])
 
   // Handle selection of a category
   const handleSelectCategory = (category: string) => {
@@ -86,6 +114,8 @@ export function CategoryCombobox({ value, onChange, onColorChange }: CategoryCom
       if (onColorChange) {
         onColorChange(category, randomColor)
       }
+    } else if (category && categoryColors[category] && onColorChange) {
+      onColorChange(category, categoryColors[category])
     }
     
     setOpen(false)
@@ -94,7 +124,13 @@ export function CategoryCombobox({ value, onChange, onColorChange }: CategoryCom
   const handleAddCategory = () => {
     if (newCategory.trim()) {
       const categoryName = newCategory.trim()
-      setCategories([...categories, categoryName])
+      setCategories(prevCategories => {
+        if (!prevCategories.includes(categoryName)) {
+          return [...prevCategories, categoryName].sort()
+        }
+        return prevCategories
+      })
+      
       onChange(categoryName)
       
       // Save the category color
@@ -115,101 +151,126 @@ export function CategoryCombobox({ value, onChange, onColorChange }: CategoryCom
   }
 
   return (
-    <>
+    <div className="w-full">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button 
-            variant="outline" 
-            role="combobox" 
-            aria-expanded={open} 
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
             className="w-full justify-between"
-            style={value && categoryColors[value] ? { backgroundColor: `${categoryColors[value]}20` } : undefined}
           >
-            <div className="flex items-center gap-2">
-              {value && categoryColors[value] && (
+            <div className="flex items-center">
+              {value && (
                 <div 
-                  className="h-4 w-4 rounded-full border" 
-                  style={{ backgroundColor: categoryColors[value] }}
+                  className="w-4 h-4 rounded-full mr-2" 
+                  style={{ backgroundColor: categoryColors[value] || "#CBD5E1" }}
                 />
               )}
-              {value || "Select category..."}
+              <span>{value || "Select category..."}</span>
             </div>
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+        <PopoverContent className="w-full p-0">
           <Command>
-            <CommandInput placeholder="Search category..." />
+            <CommandInput placeholder="Search categories..." />
+            <CommandEmpty>
+              <div className="px-2 py-3 text-sm text-muted-foreground">
+                No category found. Add a new one?
+              </div>
+              <div className="px-2 pb-2">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => setShowNewCategoryDialog(true)}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add new category
+                </Button>
+              </div>
+            </CommandEmpty>
             <CommandList>
-              <CommandEmpty>No category found.</CommandEmpty>
               <CommandGroup>
-                {categories.map((category) => (
-                  <CommandItem
-                    key={category}
-                    onSelect={() => handleSelectCategory(category)}
-                  >
-                    <div className="flex items-center gap-2 w-full">
-                      {categoryColors[category] && (
-                        <div 
-                          className="h-4 w-4 rounded-full border" 
-                          style={{ backgroundColor: categoryColors[category] }}
-                        />
-                      )}
-                      <Check className={cn("mr-2 h-4 w-4", value === category ? "opacity-100" : "opacity-0")} />
+                {categories.length > 0 ? (
+                  categories.map((category) => (
+                    <CommandItem
+                      key={category}
+                      value={category}
+                      onSelect={() => handleSelectCategory(category)}
+                      className="flex items-center"
+                    >
+                      <div 
+                        className="w-4 h-4 rounded-full mr-2 flex-shrink-0" 
+                        style={{ backgroundColor: categoryColors[category] || "#CBD5E1" }}
+                      />
                       {category}
-                    </div>
-                  </CommandItem>
-                ))}
+                      <Check
+                        className={cn(
+                          "ml-auto h-4 w-4",
+                          value === category ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                    </CommandItem>
+                  ))
+                ) : (
+                  <div className="px-2 py-3 text-sm text-muted-foreground">
+                    No categories found
+                  </div>
+                )}
+              </CommandGroup>
+              <CommandSeparator />
+              <CommandGroup>
+                <CommandItem
+                  onSelect={() => setShowNewCategoryDialog(true)}
+                  className="text-blue-600 dark:text-blue-400"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add new category
+                </CommandItem>
               </CommandGroup>
             </CommandList>
-            <CommandSeparator />
-            <CommandGroup>
-              <CommandItem
-                onSelect={() => {
-                  setShowNewCategoryDialog(true)
-                  setOpen(false)
-                }}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Add new category
-              </CommandItem>
-            </CommandGroup>
           </Command>
         </PopoverContent>
       </Popover>
 
       <Dialog open={showNewCategoryDialog} onOpenChange={setShowNewCategoryDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Add New Category</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="category-name">Category Name</Label>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="categoryName" className="text-right">
+                Name
+              </Label>
               <Input
-                id="category-name"
-                placeholder="Enter category name"
+                id="categoryName"
                 value={newCategory}
                 onChange={(e) => setNewCategory(e.target.value)}
+                className="col-span-3"
+                placeholder="Enter category name"
               />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="category-color">Category Color</Label>
-              <ColorPicker
-                value={newCategoryColor}
-                onChange={setNewCategoryColor}
-              />
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="categoryColor" className="text-right pt-2">
+                Color
+              </Label>
+              <div className="col-span-3">
+                <ColorPicker
+                  value={newCategoryColor}
+                  onChange={(value) => setNewCategoryColor(value)}
+                />
+                <div className="h-6 mt-2 rounded" style={{ backgroundColor: newCategoryColor }} />
+              </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowNewCategoryDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAddCategory}>Add Category</Button>
+            <Button type="submit" onClick={handleAddCategory}>Add Category</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   )
 }
 

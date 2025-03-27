@@ -26,17 +26,48 @@ export default function CategoriesPage() {
 
   // Load categories and colors from localStorage
   useEffect(() => {
+    // Default categories with colors to use when no categories are found
+    const defaultCategories = [
+      { name: "Entertainment", color: "#9333EA" }, // Purple
+      { name: "Business", color: "#F97316" }, // Orange (changed from Dark Peach)
+      { name: "Health", color: "#10B981" }, // Green
+      { name: "Food", color: "#05C3B6" }, // Turquoise
+      { name: "Transportation", color: "#3B82F6" }, // Blue
+      { name: "Utilities", color: "#6B7280" }, // Gray
+      { name: "Insurance", color: "#FF8B6B" }, // Dark Peach (changed from Orange)
+    ];
+    
     // Get all expenses to extract unique categories
-    const savedExpenses = localStorage.getItem("expenses")
+    const savedExpenses = localStorage.getItem("expenses");
+    let userCategories: string[] = [];
+    
     if (savedExpenses) {
-      const expenses = JSON.parse(savedExpenses) as Expense[]
-      const uniqueCategories = Array.from(new Set(expenses.map((expense: Expense) => expense.category)))
-      setCategories(uniqueCategories.filter(Boolean).sort() as string[])
+      const expenses = JSON.parse(savedExpenses) as Expense[];
+      userCategories = Array.from(new Set(expenses.map((expense: Expense) => expense.category)))
+        .filter(Boolean) as string[];
     }
-
+    
     // Get category colors
-    const colors = getCategoryColors()
-    setCategoryColors(colors)
+    const colors = getCategoryColors();
+    
+    // Combine default categories with user categories
+    const combinedCategories = new Set([
+      ...defaultCategories.map(c => c.name),
+      ...userCategories
+    ]);
+    
+    // Convert to array and sort
+    setCategories(Array.from(combinedCategories).sort());
+    
+    // Save default category colors if they don't exist
+    defaultCategories.forEach(category => {
+      if (!colors[category.name]) {
+        saveCategoryColor(category.name, category.color);
+        colors[category.name] = category.color;
+      }
+    });
+    
+    setCategoryColors(colors);
   }, [])
 
   // Add a new category

@@ -60,7 +60,20 @@ const CommandList = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <CommandPrimitive.List
     ref={ref}
-    className={cn("max-h-[300px] overflow-y-auto overflow-x-hidden", className)}
+    className={cn("max-h-[300px] overflow-y-auto overflow-x-hidden scroll-smooth", className)}
+    style={{ 
+      overscrollBehavior: "contain",
+      scrollbarWidth: "thin", // For Firefox
+      msOverflowStyle: "scrollbar", // For IE and Edge
+    }}
+    onWheel={(e) => {
+      // Ensure wheel scrolling works
+      const list = e.currentTarget;
+      if (list) {
+        list.scrollTop += e.deltaY;
+        e.preventDefault(); // Prevent the page from scrolling
+      }
+    }}
     {...props}
   />
 ))

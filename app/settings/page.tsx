@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/components/ui/use-toast"
 import { ModeToggle } from "@/components/mode-toggle"
 import { SuburbCombobox } from "@/components/suburb-combobox"
+import { Slider } from "@/components/ui/slider"
 
 interface IncomeEarner {
   id: number
@@ -18,12 +19,19 @@ interface IncomeEarner {
   amount: number
 }
 
+// Preference options for alternative search results
+type SortPreference = 'price' | 'distance' | 'balanced';
+
 export default function SettingsPage() {
   const [country, setCountry] = useState("")
   const [suburb, setSuburb] = useState("")
   const [incomeEarners, setIncomeEarners] = useState<IncomeEarner[]>([
     { id: 1, name: "", amount: 0 }
   ])
+  // New state for search preferences
+  const [locationRadius, setLocationRadius] = useState<number>(10)
+  const [sortPreference, setSortPreference] = useState<SortPreference>('balanced')
+  
   const { toast } = useToast()
 
   const countries = ["Australia", "United States", "Canada", "United Kingdom", "New Zealand"]
@@ -33,6 +41,8 @@ export default function SettingsPage() {
     const savedCountry = localStorage.getItem("userCountry")
     const savedSuburb = localStorage.getItem("userSuburb")
     const savedIncomeEarners = localStorage.getItem("incomeEarners")
+    const savedLocationRadius = localStorage.getItem("userLocationRadius")
+    const savedSortPreference = localStorage.getItem("userSortPreference") as SortPreference
 
     if (savedCountry) setCountry(savedCountry)
     if (savedSuburb) setSuburb(savedSuburb)
@@ -43,12 +53,16 @@ export default function SettingsPage() {
         console.error("Error loading income earners:", e)
       }
     }
+    if (savedLocationRadius) setLocationRadius(Number(savedLocationRadius))
+    if (savedSortPreference) setSortPreference(savedSortPreference)
   }, [])
 
   const handleSaveSettings = () => {
     localStorage.setItem("userCountry", country)
     localStorage.setItem("userSuburb", suburb)
     localStorage.setItem("incomeEarners", JSON.stringify(incomeEarners))
+    localStorage.setItem("userLocationRadius", locationRadius.toString())
+    localStorage.setItem("userSortPreference", sortPreference)
     
     toast({
       title: "Settings saved",
@@ -116,6 +130,55 @@ export default function SettingsPage() {
             <div className="space-y-2">
               <Label htmlFor="suburb">Suburb</Label>
               <SuburbCombobox country={country} value={suburb} onChange={setSuburb} />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* New Card for Search Preferences */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Alternative Search Preferences</CardTitle>
+            <CardDescription>Customize how savings alternatives are found and prioritized</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="locationRadius" className="flex justify-between">
+                  <span>Maximum Store Distance</span>
+                  <span className="text-sm text-muted-foreground">{locationRadius} km</span>
+                </Label>
+                <div className="pt-2">
+                  <Slider
+                    id="locationRadius"
+                    min={1}
+                    max={50}
+                    step={1}
+                    value={[locationRadius]}
+                    onValueChange={(value) => setLocationRadius(value[0])}
+                    className="py-4"
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Only show physical store alternatives within {locationRadius} km of your location
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="sortPreference">Alternative Results Priority</Label>
+                <Select value={sortPreference} onValueChange={(value) => setSortPreference(value as SortPreference)}>
+                  <SelectTrigger id="sortPreference">
+                    <SelectValue placeholder="Select your preference" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="price">Lowest Price First (Best Savings)</SelectItem>
+                    <SelectItem value="distance">Closest Location First (Convenience)</SelectItem>
+                    <SelectItem value="balanced">Balanced (Consider Both Price & Distance)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Choose how to prioritize alternatives when showing results
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>

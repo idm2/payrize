@@ -1377,33 +1377,49 @@ This enhancement provides multiple benefits:
 - Increased user trust by showing where recommendations are coming from
 - Creates a multi-layered approach that's more resilient to API failures
 
-[04/18/2024] - Enhanced Price Accuracy and Source Attribution
+[04/18/2024] - Enhanced Price Comparison Accuracy and Transparency
 
-Significantly improved the accuracy of product pricing information and source transparency:
+IMPROVEMENTS SUMMARY:
+1. Enhanced price comparison accuracy, particularly for health insurance and service-based expenses
+2. Implemented confidence scoring system to communicate price reliability to users
+3. Improved search queries for service-based products
+4. Added specialized prompts for insurance-related expenses
+5. Enhanced visual feedback for users to distinguish between high and low confidence price comparisons
 
-1. Brave Search API improvements:
-   - Enhanced search query construction with more targeted terms
-   - Implemented sophisticated price extraction with multiple regex patterns
-   - Added validation to ensure prices are reasonable (not suspiciously low)
-   - Improved product name cleaning to provide clearer alternative names
-   - Added description formatting to focus on the most relevant information
+KEY CHANGES:
 
-2. OpenAI API enhancements:
-   - Updated prompt to emphasize the need for accurate, specific pricing
-   - Added detailed guidelines for product suggestions
+1. BRAVE SEARCH API IMPROVEMENTS:
+   - Enhanced search query construction with targeted terms for insurance products
+   - Implemented sophisticated price extraction using multiple regex patterns
+   - Added validation to ensure prices are reasonable and within expected ranges
+   - Improved product name cleaning for better clarity in results
+   - Enhanced description formatting to focus on most relevant information
+   - Implemented URL validation to ensure alternatives link to specific product pages
+   - Added confidence score calculation based on price patterns, source quality, and pricing ratios
+
+2. OPENAI API ENHANCEMENTS:
+   - Updated prompt to emphasize accurate pricing information
+   - Added detailed guidelines for product suggestions in different categories
    - Reduced temperature to 0.2 for more factual responses
+   - Provided category-specific instructions for different expense types
    - Improved system message to position the AI as a pricing expert
+   - Requested confidence scores for all alternative suggestions
 
-3. UI improvements:
+3. UI IMPROVEMENTS:
    - Made source attribution more prominent with distinctive badges
-   - Added "Prices may vary" disclaimer in the alternatives dialog
-   - Improved visual distinction of data sources
+   - Added confidence visualization with color-coded progress bars
+   - Included textual confidence level indicators (High/Medium/Low)
+   - Added a "Prices may vary" disclaimer in the alternatives dialog
+   - Improved visual distinction between different data sources
+   - Enhanced the display of price-related information
 
-4. Security improvements:
+4. SECURITY IMPROVEMENTS:
    - Moved API key to environment variables
-   - Added proper error handling for missing API keys
+   - Added error handling for missing API keys
+   - Implemented proper error handling for API responses
 
-These changes significantly improve the reliability and transparency of the pricing information shown to users, allowing them to make more informed decisions about potential savings opportunities.
+BENEFITS TO USERS:
+These improvements significantly enhance user trust in the pricing information provided. Users can now see at a glance how reliable each price comparison is, allowing them to make more informed decisions about potential savings opportunities. The specialized handling for different expense categories, especially health insurance, provides more accurate and relevant alternatives.
 
 [04/18/2024] - Fix for localStorage in Server-Side Rendering
 
@@ -1423,3 +1439,201 @@ Fixed a remaining localStorage reference in the analytics page that was causing 
 - Updated direct localStorage call in the Savings Goal Progress section to use safeLocalStorage
 - This fixes the "ReferenceError: localStorage is not defined" error during server-side rendering
 - Ensures all parts of the analytics page can be properly pre-rendered on the server
+
+[05/09/2024] - Enhanced Price Comparison Accuracy and Transparency
+
+IMPROVEMENTS SUMMARY:
+1. Enhanced price comparison accuracy, particularly for health insurance and service-based expenses
+2. Implemented confidence scoring system to communicate price reliability to users
+3. Improved search queries for service-based products
+4. Added specialized prompts for insurance-related expenses
+5. Enhanced visual feedback for users to distinguish between high and low confidence price comparisons
+
+KEY CHANGES:
+
+1. BRAVE SEARCH API IMPROVEMENTS:
+   - Enhanced search query construction with targeted terms for insurance products
+   - Implemented sophisticated price extraction using multiple regex patterns
+   - Added validation to ensure prices are reasonable and within expected ranges
+   - Improved product name cleaning for better clarity in results
+   - Enhanced description formatting to focus on most relevant information
+   - Implemented URL validation to ensure alternatives link to specific product pages
+   - Added confidence score calculation based on price patterns, source quality, and pricing ratios
+
+2. OPENAI API ENHANCEMENTS:
+   - Updated prompt to emphasize accurate pricing information
+   - Added detailed guidelines for product suggestions in different categories
+   - Reduced temperature to 0.2 for more factual responses
+   - Provided category-specific instructions for different expense types
+   - Improved system message to position the AI as a pricing expert
+   - Requested confidence scores for all alternative suggestions
+
+3. UI IMPROVEMENTS:
+   - Made source attribution more prominent with distinctive badges
+   - Added confidence visualization with color-coded progress bars
+   - Included textual confidence level indicators (High/Medium/Low)
+   - Added a "Prices may vary" disclaimer in the alternatives dialog
+   - Improved visual distinction between different data sources
+   - Enhanced the display of price-related information
+
+4. SECURITY IMPROVEMENTS:
+   - Moved API key to environment variables
+   - Added error handling for missing API keys
+   - Implemented proper error handling for API responses
+
+BENEFITS TO USERS:
+These improvements significantly enhance user trust in the pricing information provided. Users can now see at a glance how reliable each price comparison is, allowing them to make more informed decisions about potential savings opportunities. The specialized handling for different expense categories, especially health insurance, provides more accurate and relevant alternatives.
+
+[05/10/2024] - PayRize Wizard and Categories Page Enhancements
+
+IMPROVEMENTS SUMMARY:
+1. Fixed missing form fields in the PayRize Wizard expense creation UI
+2. Added default categories to the Categories management page for new users
+3. Enhanced user experience for first-time setup and configuration
+
+KEY CHANGES:
+
+1. PAYRIZE WIZARD FORM ENHANCEMENTS:
+   - Added Willingness dropdown to both personal and business expense forms
+   - Added URL field to match the standard expense form behavior
+   - Updated initial state objects with proper field defaults
+   - Ensured all fields are properly saved when creating expenses
+   - Improved consistency between the wizard and the main application
+
+2. CATEGORIES PAGE IMPROVEMENTS:
+   - Implemented default categories when users have no existing categories
+   - Added seven pre-configured categories with color assignments:
+     * Entertainment (Purple)
+     * Business (Dark Peach)
+     * Health (Green)
+     * Food (Turquoise)
+     * Transportation (Blue)
+     * Utilities (Gray)
+     * Insurance (Orange)
+   - Saved default category colors to localStorage for persistence
+   - Ensured categories and colors are properly loaded on page initialization
+
+BENEFITS TO USERS:
+These improvements create a more seamless user experience, particularly for new users. The PayRize Wizard now captures all necessary information in one flow, avoiding the need for users to edit expenses later to add missing information. The Categories page now provides immediate value to new users by pre-populating common expense categories with appropriate colors, making the application ready-to-use from the first launch.
+
+[05/11/2024] - Health Insurance Pricing Accuracy and UI Improvements
+
+IMPROVEMENTS SUMMARY:
+1. Fixed health insurance alternatives not showing for users
+2. Addressed the price discrepancy between app estimates and provider websites
+3. Enhanced the UI to make it clearer that prices are estimates requiring verification
+
+KEY CHANGES:
+
+1. HEALTH INSURANCE SEARCH IMPROVEMENTS:
+   - Updated search queries for health insurance to use more specific terminology
+   - Added location-specific search parameters to ensure relevant results
+   - Implemented specialized price extraction patterns for insurance products
+   - Added validation ranges for known Australian health insurance providers
+   - Made minimum price ratios more flexible for insurance (25% vs 35% for other products)
+
+2. OPENAI PROMPT ENHANCEMENTS:
+   - Created specialized system prompt for health insurance expertise
+   - Added Australian-specific provider examples (Medibank, Bupa, NIB, etc.)
+   - Included specific plan naming conventions and coverage terminology
+   - Established realistic price ranges for different providers and plan types
+   - Added price validation to filter out inaccurate results
+
+3. UI TRANSPARENCY IMPROVEMENTS:
+   - Added "View on Provider Site" button with clearer labeling
+   - Enhanced the display of price source information (OpenAI vs Brave)
+   - Added explicit disclaimer that "Prices shown are estimates and may vary"
+   - Improved confidence indicator visualization with clearer levels
+   - Added more context about price verification requirements
+
+BENEFITS TO USERS:
+These improvements significantly enhance the accuracy and transparency of health insurance alternatives. Users will now see more relevant health insurance options with realistic pricing estimates, and the improved UI makes it clearer that they should verify final pricing on the provider's official website before making any decisions.
+
+## 2023-08-30 - Fixed critical issues with PayRize Wizard and Savings functionality
+
+### Issues Fixed:
+
+1. **PayRize Wizard Loading Animation**
+   - Restored the loading animation that appears after completing the wizard
+   - Ensured the loading overlay remains visible throughout the entire process
+   - Fixed the progress indicator to accurately reflect the status of finding alternatives
+
+2. **Default Alternatives Display**
+   - Fixed issue where alternatives were not being recommended by default
+   - Ensured that the best alternative is automatically selected for each expense
+   - Properly displaying "No alternatives by default" message when appropriate
+
+3. **Refresh All Button Functionality**
+   - Implemented full functionality for the "Refresh All" button in the Savings view
+   - Added proper API calls to fetch new alternatives for all eligible expenses
+   - Added progress indicators and proper error handling
+
+4. **Unit Preservation in Expense Creation**
+   - Fixed issue where expense units were defaulting to 1 regardless of user input
+   - Ensured that quantity values are properly preserved when creating expenses through the wizard
+   - Added validation to ensure "Per Unit" expenses always have a quantity value
+
+5. **Manual Savings Adjustment**
+   - Restored the ability to manually adjust savings without using suggested alternatives
+   - Added a slider component to control the savings percentage
+   - Implemented proper UI to show manual savings vs alternative-based savings
+   - Added clear visual indicators for expenses with manual savings
+
+### Technical Changes:
+
+1. Updated the `Expense` type to include:
+   - `manualSavingsPercentage` property for tracking manual savings
+   - Proper handling of the `quantity` field
+   - Added `source` field to the `selectedAlternative` object
+
+2. Enhanced the SavingsItem component:
+   - Added a Manual Savings button and dialog
+   - Updated the savings calculation to account for both manual and alternative-based savings
+   - Improved the savings explanation display
+
+3. Fixed the loading overlay in PayRize Wizard:
+   - Ensured it remains visible during the entire process
+   - Only hiding it on error, not during successful completion
+
+4. Fixed the Refresh All functionality:
+   - Added proper API calls to fetch alternatives
+   - Implemented progress tracking and error handling
+
+These changes restore critical functionality that was previously broken while maintaining the application's design and user experience.
+
+[2024-08-28] Fixed Zero Results Issue for Basic Products
+
+PROBLEM:
+Users were experiencing an issue where searches for basic items like "milk" and "shoes" were returning zero alternatives. The issue was caused by overly strict location filtering that was eliminating all results, even online alternatives, when no local stores were found within the user's preferred radius.
+
+FIXES IMPLEMENTED:
+1. Relaxed Product Filtering Logic:
+   - Modified the `relaxedDistanceFilter` function to be more lenient, keeping online alternatives even when no local stores are found.
+   - Added logic to mark products without local stores as "online-only" rather than completely filtering them out.
+   - Ensured physical products without location data are kept but properly tagged.
+
+2. Fallback Mechanism for Zero Results:
+   - Implemented a robust fallback system that ensures at least some alternatives are always shown.
+   - If the filtering process results in zero alternatives, the system now returns all alternatives marked as online-only.
+   - Added a better backup alternative generator with more specific naming based on product types.
+
+3. Enhanced Type Safety:
+   - Updated the `AlternativeProduct` type to include the `isOnlineOnly` property, ensuring type safety throughout the application.
+   - Improved error handling to prevent crashes when processing alternatives.
+
+FILES MODIFIED:
+- app/api/alternatives/route.ts (major overhaul of filtering logic)
+- lib/utils.ts (updated type definition)
+- development-log.txt (documented changes)
+
+USER EXPERIENCE BENEFITS:
+- Users will now see alternatives for all products, regardless of local store availability.
+- Clear distinction between online-only products and those available at local stores.
+- More relevant backup alternatives with product-specific naming (e.g., "Store Brand" for milk).
+- Consistent results even when location-based searches don't yield local options.
+
+NEXT STEPS:
+- Monitor the system to ensure alternatives are consistently shown for all product types.
+- Consider adding more specific online store information for online-only products.
+- Explore additional ways to improve the relevance of online alternatives.
+- Add more detailed information about delivery options for online-only products.

@@ -13,7 +13,7 @@ export const THEME_COLORS = [
   { name: "Blue", value: "#38BDF8" },
   { name: "Purple", value: "#6366F1" },
   { name: "Pink", value: "#EC4899" },
-  { name: "Orange", value: "#FB923C" },
+  { name: "Orange", value: "#F97316" },
 ]
 
 interface ColorPickerProps {

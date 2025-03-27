@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { Wand2, ArrowRight, ArrowLeft, Check, Coins, Loader2 } from "lucide-react"
+import { Wand2, ArrowRight, ArrowLeft, Check, Coins, Loader2, Trash2 } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -15,28 +15,29 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { CategoryCombobox } from "@/components/category-combobox"
 import { useToast } from "@/components/ui/use-toast"
-import { formatCurrency } from "@/lib/utils"
+import { formatCurrency, getCategoryColor, normalizeToMonthlyAmount } from "@/lib/utils"
 import type { Expense, AlternativeProduct } from "@/lib/utils"
 import { Progress } from "@/components/ui/progress"
+import { Textarea } from "@/components/ui/textarea"
 
-// Add LoadingOverlay component
-const LoadingOverlay = ({ visible }: { visible: boolean }) => {
+// Update the LoadingOverlay component to make it more prominent
+const LoadingOverlay = ({ visible, progress }: { visible: boolean, progress?: number }) => {
   if (!visible) return null;
   
   return (
-    <div className="fixed inset-0 bg-gradient-to-r from-purple-500 to-pink-500 flex flex-col items-center justify-center z-50">
-      <div className="text-white text-2xl font-bold mb-8">
-        Please wait while we prepare your PayRize
+    <div className="fixed inset-0 bg-gradient-to-r from-purple-600 to-pink-600 flex flex-col items-center justify-center z-50">
+      <div className="text-white text-3xl font-bold mb-8 text-center px-4">
+        Finding you the best savings options...
       </div>
       
-      <div className="relative w-64 h-24">
+      <div className="relative w-64 h-32 mb-8">
         {/* Animated wave line */}
         <svg className="absolute inset-0" viewBox="0 0 200 50" preserveAspectRatio="none">
           <path 
             d="M0,25 C20,10 40,40 60,25 C80,10 100,40 120,25 C140,10 160,40 180,25 C200,10 220,40 240,25" 
             fill="none" 
             stroke="white" 
-            strokeWidth="2"
+            strokeWidth="3"
             strokeLinecap="round"
             className="animate-wave"
           />
@@ -44,11 +45,22 @@ const LoadingOverlay = ({ visible }: { visible: boolean }) => {
         
         {/* Coin icon that moves along the wave */}
         <div className="absolute top-0 left-0 animate-move-along-wave">
-          <div className="w-12 h-12 rounded-full bg-white dark:bg-gray-900 flex items-center justify-center text-purple-500 dark:text-purple-400">
-            <Coins className="h-8 w-8" />
+          <div className="w-16 h-16 rounded-full bg-white dark:bg-gray-900 flex items-center justify-center text-purple-500 dark:text-purple-400 shadow-lg">
+            <Coins className="h-10 w-10" />
           </div>
         </div>
       </div>
+      
+      {progress !== undefined && (
+        <div className="w-64 mb-4">
+          <Progress value={progress} className="h-2 bg-white/20" />
+          <p className="text-white text-sm mt-2 text-center">{progress}% complete</p>
+        </div>
+      )}
+      
+      <p className="text-white/80 text-sm max-w-md text-center px-4">
+        We're searching across multiple services to find you the best alternatives and maximize your savings
+      </p>
     </div>
   );
 };
@@ -87,18 +99,47 @@ export function PayRizeWizard({ open, onOpenChange }: PayRizeWizardProps) {
     name: "",
     amount: 0,
     category: "",
-    frequency: "Monthly"
+    frequency: "Monthly",
+    description: "",
+    willingness: "Possible",
+    url: ""
   })
   
   const [tempBusinessExpense, setTempBusinessExpense] = useState<Partial<Expense>>({
     name: "",
     amount: 0,
     category: "",
-    frequency: "Monthly"
+    frequency: "Monthly",
+    description: "",
+    willingness: "Possible",
+    url: ""
   })
   
-  const [isProcessingAlternatives, setIsProcessingAlternatives] = useState(false)
-  const [alternativesProgress, setAlternativesProgress] = useState(0)
+  // Current expense type (personal or business)
+  const currentStep = step;
+  const currentExpenseType = step === 3 ? 'personal' : step === 4 ? 'business' : null;
+  
+  // Add a progress state for the loading animation
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [isProcessingAlternatives, setIsProcessingAlternatives] = useState(false);
+  const [alternativesProgress, setAlternativesProgress] = useState(0);
+  
+  // Sample categories for expenses
+  const categories = [
+    { name: "Housing" },
+    { name: "Transportation" },
+    { name: "Food" },
+    { name: "Entertainment" },
+    { name: "Utilities" },
+    { name: "Healthcare" },
+    { name: "Personal" },
+    { name: "Debt" },
+    { name: "Insurance" },
+    { name: "Savings" },
+    { name: "Education" },
+    { name: "Business" },
+    { name: "Other" }
+  ];
   
   // Reset form when dialog closes
   useEffect(() => {
@@ -121,8 +162,10 @@ export function PayRizeWizard({ open, onOpenChange }: PayRizeWizardProps) {
   const totalIncome = data.income.reduce((sum, income) => sum + income, 0)
   
   // Calculate total expenses
-  const totalPersonalExpenses = data.personalExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0)
-  const totalBusinessExpenses = data.businessExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0)
+  const totalPersonalExpenses = data.personalExpenses.reduce((sum, expense: Expense) => 
+    sum + normalizeToMonthlyAmount(expense), 0)
+  const totalBusinessExpenses = data.businessExpenses.reduce((sum, expense: Expense) => 
+    sum + normalizeToMonthlyAmount(expense), 0)
   const totalExpenses = totalPersonalExpenses + totalBusinessExpenses
   
   // Calculate maximum possible savings
@@ -153,13 +196,19 @@ export function PayRizeWizard({ open, onOpenChange }: PayRizeWizardProps) {
   }
   
   // Handle personal expense field changes
-  const handlePersonalExpenseChange = (field: string, value: any) => {
-    setTempPersonalExpense(prev => ({ ...prev, [field]: field === "amount" ? Number(value) || 0 : value }))
+  const handlePersonalExpenseChange = (field: keyof Expense, value: any) => {
+    setTempPersonalExpense(prev => ({ 
+      ...prev, 
+      [field]: field === "amount" ? Number(value) || 0 : value 
+    }))
   }
   
   // Handle business expense field changes
-  const handleBusinessExpenseChange = (field: string, value: any) => {
-    setTempBusinessExpense(prev => ({ ...prev, [field]: field === "amount" ? Number(value) || 0 : value }))
+  const handleBusinessExpenseChange = (field: keyof Expense, value: any) => {
+    setTempBusinessExpense(prev => ({ 
+      ...prev, 
+      [field]: field === "amount" ? Number(value) || 0 : value 
+    }))
   }
   
   // Add personal expense
@@ -172,8 +221,10 @@ export function PayRizeWizard({ open, onOpenChange }: PayRizeWizardProps) {
       amount: tempPersonalExpense.amount || 0,
       category: tempPersonalExpense.category || "",
       frequency: tempPersonalExpense.frequency || "Monthly",
-      description: "Added via PayRize Wizard",
-      willingness: "Possible"
+      description: tempPersonalExpense.description || "Added via PayRize Wizard",
+      willingness: tempPersonalExpense.willingness || "Possible",
+      url: tempPersonalExpense.url || "",
+      quantity: tempPersonalExpense.quantity || 1
     }
     
     setData(prev => ({
@@ -186,7 +237,10 @@ export function PayRizeWizard({ open, onOpenChange }: PayRizeWizardProps) {
       name: "",
       amount: 0,
       category: "",
-      frequency: "Monthly"
+      frequency: "Monthly",
+      description: "",
+      willingness: "Possible",
+      url: ""
     })
   }
   
@@ -200,8 +254,10 @@ export function PayRizeWizard({ open, onOpenChange }: PayRizeWizardProps) {
       amount: tempBusinessExpense.amount || 0,
       category: tempBusinessExpense.category || "",
       frequency: tempBusinessExpense.frequency || "Monthly",
-      description: "Added via PayRize Wizard (Business)",
-      willingness: "Possible"
+      description: tempBusinessExpense.description || "Added via PayRize Wizard",
+      willingness: tempBusinessExpense.willingness || "Possible",
+      url: tempBusinessExpense.url || "",
+      quantity: tempBusinessExpense.quantity || 1
     }
     
     setData(prev => ({
@@ -214,7 +270,10 @@ export function PayRizeWizard({ open, onOpenChange }: PayRizeWizardProps) {
       name: "",
       amount: 0,
       category: "",
-      frequency: "Monthly"
+      frequency: "Monthly",
+      description: "",
+      willingness: "Possible",
+      url: ""
     })
   }
   
@@ -268,7 +327,8 @@ export function PayRizeWizard({ open, onOpenChange }: PayRizeWizardProps) {
         description: alt.description,
         price: alt.price,
         url: alt.url,
-        savings: expense.amount - alt.price
+        savings: expense.amount - alt.price,
+        source: alt.source
       }))
     } catch (error) {
       console.error("Error fetching alternatives:", error)
@@ -278,151 +338,191 @@ export function PayRizeWizard({ open, onOpenChange }: PayRizeWizardProps) {
   
   // Process the wizard data
   const processWizardData = async () => {
-    setIsProcessing(true)
-    setShowLoadingOverlay(true)
+    // Show loading overlay before any processing begins
+    setShowLoadingOverlay(true);
+    setLoadingProgress(5);
     
-    // Close the dialog immediately when loading starts
-    onOpenChange(false)
+    // Close the dialog immediately to show the loading animation
+    onOpenChange(false);
     
     try {
-      // Simulate API call with a delay
-      await new Promise(resolve => setTimeout(resolve, 2500))
+      // Simulate some initial processing time to show the animation
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setLoadingProgress(10);
       
-      // 1. Save income earners to localStorage
+      // Save user data
+      localStorage.setItem('userName', data.name);
+      setLoadingProgress(15);
+      
+      // Save income earners
       const incomeEarners = data.income.map((amount, index) => ({
         id: index + 1,
         name: index === 0 ? `${data.name}'s Income` : `Additional Income ${index}`,
         amount: amount
-      }))
+      }));
+      localStorage.setItem('incomeEarners', JSON.stringify(incomeEarners));
+      setLoadingProgress(25);
       
-      localStorage.setItem("incomeEarners", JSON.stringify(incomeEarners))
+      // Clear existing expenses to avoid duplicates
+      const existingExpenses: Expense[] = [];
       
-      // 2. Save user name to localStorage
-      localStorage.setItem("userName", data.name)
+      // Create a set of existing IDs for quick lookup
+      const existingIds = new Set(existingExpenses.map((e: Expense) => e.id));
       
-      // 3. Combine and save expenses
-      const allExpenses = [
-        ...data.personalExpenses,
-        ...data.businessExpenses
-      ]
+      // Generate unique IDs for new expenses and ensure quantity is preserved
+      const personalExpensesWithIds = data.personalExpenses.map(expense => {
+        const id = expense.id && !existingIds.has(expense.id) 
+          ? expense.id 
+          : crypto.randomUUID();
+        existingIds.add(id);
+        // Ensure quantity is set for "Per Unit" expenses
+        const quantity = expense.frequency === "Per Unit" && expense.quantity
+          ? expense.quantity
+          : expense.frequency === "Per Unit" ? 1 : undefined;
+          
+        return { 
+          ...expense, 
+          id,
+          quantity 
+        };
+      });
       
-      // Get existing expenses
-      const existingExpenses = localStorage.getItem("expenses")
-      const expenses = existingExpenses ? JSON.parse(existingExpenses) : []
-      
-      // Combine with new expenses
-      const updatedExpenses = [...expenses, ...allExpenses]
-      localStorage.setItem("expenses", JSON.stringify(updatedExpenses))
-      
-      // 4. Save savings goal
-      localStorage.setItem("savingsGoal", data.savingsGoal.toString())
-      
-      // 5. Analyze expenses to find savings opportunities
-      // This would typically call an AI service, but we'll simulate it
-      const analyzedExpenses = allExpenses.map(expense => {
-        // Randomly assign willingness based on expense amount
-        // In a real app, this would be done by AI
-        const willingness = expense.amount > 100 ? "Very Willing" : 
-                           expense.amount > 50 ? "Possible" : "Not Willing"
+      const businessExpensesWithIds = data.businessExpenses.map(expense => {
+        const id = expense.id && !existingIds.has(expense.id) 
+          ? expense.id 
+          : crypto.randomUUID();
+        existingIds.add(id);
+        // Ensure quantity is set for "Per Unit" expenses
+        const quantity = expense.frequency === "Per Unit" && expense.quantity
+          ? expense.quantity
+          : expense.frequency === "Per Unit" ? 1 : undefined;
         
-        // Randomly generate a target amount (simulating AI recommendation)
-        const targetAmount = Math.round(expense.amount * (0.7 + Math.random() * 0.2))
-        
-        return {
-          ...expense,
-          willingness,
-          targetAmount
-        }
-      })
+        return { 
+          ...expense, 
+          id,
+          quantity
+        };
+      });
       
-      // Update expenses with analysis
-      localStorage.setItem("expenses", JSON.stringify([
-        ...expenses.filter((e: any) => !allExpenses.some(ne => ne.id === e.id)),
-        ...analyzedExpenses
-      ]))
+      // Combine expenses
+      const newExpenses = [...existingExpenses, ...personalExpensesWithIds, ...businessExpensesWithIds];
+      
+      // Save expenses to localStorage
+      localStorage.setItem('expenses', JSON.stringify(newExpenses));
+      setLoadingProgress(40);
       
       // Dispatch event to notify other components
-      window.dispatchEvent(new Event('expensesUpdated'))
+      window.dispatchEvent(new Event('expensesUpdated'));
       
-      setIsComplete(true)
+      // Save savings goal
+      localStorage.setItem('savingsGoal', data.savingsGoal.toString());
+      setLoadingProgress(50);
       
-      // Find alternatives for expenses with good descriptions and add them to the plan
-      const allNewExpenses = [...data.personalExpenses, ...data.businessExpenses]
-      const expensesWithDescriptions = allNewExpenses.filter(expense => 
-        expense.description && expense.description.length > 10 && expense.willingness !== "Not Willing"
-      )
+      // Flag indicating we're looking for savings
+      localStorage.setItem('autoSearchSavings', 'true');
       
-      if (expensesWithDescriptions.length > 0) {
-        setIsProcessingAlternatives(true)
+      // Find expenses that have willingness to change (Possible or Very Willing)
+      const allNewExpenses = [...personalExpensesWithIds, ...businessExpensesWithIds];
+      const eligibleExpenses = allNewExpenses.filter(expense => 
+        expense.willingness === "Possible" || expense.willingness === "Very Willing"
+      );
+      
+      if (eligibleExpenses.length > 0) {
+        setIsProcessingAlternatives(true);
+        setLoadingProgress(60);
         
-        // Process alternatives for each expense
-        const processedExpenses = [...updatedExpenses]
-        let processedCount = 0
-        
-        for (const expense of expensesWithDescriptions) {
-          // Update progress
-          setAlternativesProgress(Math.round((processedCount / expensesWithDescriptions.length) * 100))
+        try {
+          // Process alternatives for each expense
+          const updatedExpenses = [...newExpenses];
+          let processedCount = 0;
           
-          // Fetch alternatives
-          const alternatives = await fetchAlternatives(expense)
-          
-          if (alternatives && alternatives.length > 0) {
-            // Find the best alternative (highest savings)
-            const bestAlternative = alternatives.reduce((best: AlternativeProduct, current: AlternativeProduct) => 
-              current.savings > best.savings ? current : best, alternatives[0]
-            )
+          for (const expense of eligibleExpenses) {
+            // Make sure loading overlay remains visible
+            setShowLoadingOverlay(true);
             
-            // Update the expense with alternatives and select the best one
-            const expenseIndex = processedExpenses.findIndex((e: Expense) => e.id === expense.id)
-            if (expenseIndex !== -1) {
-              processedExpenses[expenseIndex] = {
-                ...processedExpenses[expenseIndex],
-                alternatives: alternatives,
-                selectedAlternative: {
-                  id: bestAlternative.id,
-                  name: bestAlternative.name,
-                  price: bestAlternative.price,
-                  savings: bestAlternative.savings
-                },
-                targetAmount: bestAlternative.price,
-                willingness: "Very Willing" // Mark as very willing since we're selecting an alternative
+            // Update progress
+            const individualProgress = Math.round((processedCount / eligibleExpenses.length) * 40);
+            setAlternativesProgress(Math.round((processedCount / eligibleExpenses.length) * 100));
+            setLoadingProgress(60 + individualProgress);
+            
+            // Fetch alternatives with a longer timeout
+            try {
+              const alternatives = await fetchAlternatives(expense);
+              
+              if (alternatives && alternatives.length > 0) {
+                // Find best alternative
+                const bestAlternative = alternatives.reduce((best: AlternativeProduct, current: AlternativeProduct) => 
+                  current.savings > best.savings ? current : best, alternatives[0]
+                );
+                
+                // Update the expense with alternatives and best selection
+                const expenseIndex = updatedExpenses.findIndex((e: Expense) => e.id === expense.id);
+                if (expenseIndex !== -1) {
+                  updatedExpenses[expenseIndex] = {
+                    ...updatedExpenses[expenseIndex],
+                    alternatives: alternatives,
+                    selectedAlternative: {
+                      id: bestAlternative.id,
+                      name: bestAlternative.name,
+                      price: bestAlternative.price,
+                      savings: bestAlternative.savings,
+                      source: bestAlternative.source,
+                      location: bestAlternative.location
+                    },
+                    targetAmount: bestAlternative.price,
+                    willingness: "Very Willing"
+                  };
+                }
               }
+            } catch (error) {
+              console.error(`Error finding alternatives for ${expense.name}:`, error);
+              // Continue with next expense even if one fails
             }
+            
+            processedCount++;
           }
           
-          processedCount++
+          // Save updated expenses with alternatives
+          localStorage.setItem('expenses', JSON.stringify(updatedExpenses));
+          
+          // Dispatch event to notify other components
+          window.dispatchEvent(new Event('expensesUpdated'));
+          
+        } catch (error) {
+          console.error("Error processing alternatives:", error);
+        } finally {
+          setIsProcessingAlternatives(false);
+          setLoadingProgress(100);
         }
-        
-        // Save updated expenses with alternatives
-        localStorage.setItem('expenses', JSON.stringify(processedExpenses))
-        
-        // Dispatch event to notify other components
-        window.dispatchEvent(new Event('expensesUpdated'))
-        
-        setIsProcessingAlternatives(false)
+      } else {
+        // No expenses with willingness to change, so we're done
+        setLoadingProgress(100);
       }
+      
+      // Keep loading overlay visible for a moment to show 100% completion
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Show success message
       toast({
         title: "Setup Complete!",
         description: "Your PayRize profile has been successfully set up and alternatives have been automatically added to your plan."
-      })
+      });
       
-      // Navigate to the savings screen
+      // Navigate to the savings screen directly without closing the loader
       window.location.href = "/savings";
       
     } catch (error) {
-      console.error("Error processing wizard data:", error)
+      console.error("Error processing wizard data:", error);
       toast({
         title: "Error",
         description: "There was an error processing your data. Please try again.",
         variant: "destructive",
-      })
-    } finally {
-      setIsProcessing(false)
-      setShowLoadingOverlay(false)
+      });
+      // Only hide loading overlay on error
+      setShowLoadingOverlay(false);
     }
-  }
+    // Do NOT set showLoadingOverlay to false here to ensure it stays visible during redirect
+  };
   
   // Handle next step
   const handleNext = () => {
@@ -460,150 +560,23 @@ export function PayRizeWizard({ open, onOpenChange }: PayRizeWizardProps) {
   
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     
     // Save data to localStorage
     if (step === 5) {
-      setShowLoadingOverlay(true)
+      // Show loading overlay before processing begins
+      setShowLoadingOverlay(true);
       
-      // Close the dialog immediately when loading starts
-      onOpenChange(false)
+      // Close dialog to show loading animation
+      onOpenChange(false);
       
-      // Save user data
-      localStorage.setItem('userName', data.name)
-      
-      // Save income earners
-      const incomeEarners = data.income.map((amount, index) => ({
-        id: index + 1,
-        name: index === 0 ? `${data.name}'s Income` : `Additional Income ${index}`,
-        amount: amount
-      }))
-      localStorage.setItem('incomeEarners', JSON.stringify(incomeEarners))
-      
-      // Save expenses - get existing expenses first
-      // const existingExpenses = JSON.parse(localStorage.getItem('expenses') || '[]')
-      
-      // IMPORTANT: We're clearing all existing expenses to fix the loop issue
-      const existingExpenses: Expense[] = []
-      
-      // Create a set of existing IDs for quick lookup
-      const existingIds = new Set(existingExpenses.map((e: Expense) => e.id))
-      
-      // Generate unique IDs for new expenses to avoid conflicts
-      const personalExpensesWithIds = data.personalExpenses.map(expense => {
-        // If the expense already has an ID and it's not in existingIds, use it
-        // Otherwise, generate a new UUID
-        const id = expense.id && !existingIds.has(expense.id) 
-          ? expense.id 
-          : crypto.randomUUID()
-        
-        // Add this ID to our set to avoid duplicates within this batch
-        existingIds.add(id)
-        
-        return {
-          ...expense,
-          id
-        }
-      });
-      
-      const businessExpensesWithIds = data.businessExpenses.map(expense => {
-        // If the expense already has an ID and it's not in existingIds, use it
-        // Otherwise, generate a new UUID
-        const id = expense.id && !existingIds.has(expense.id) 
-          ? expense.id 
-          : crypto.randomUUID()
-        
-        // Add this ID to our set to avoid duplicates within this batch
-        existingIds.add(id)
-        
-        return {
-          ...expense,
-          id
-        }
-      });
-      
-      // Combine existing and new expenses
-      const newExpenses = [...existingExpenses, ...personalExpensesWithIds, ...businessExpensesWithIds]
-      
-      // Save to localStorage
-      localStorage.setItem('expenses', JSON.stringify(newExpenses))
-      
-      // Dispatch event to notify other components
-      window.dispatchEvent(new Event('expensesUpdated'))
-      
-      // Save savings goal
-      localStorage.setItem('savingsGoal', data.savingsGoal.toString())
-      
-      // Find alternatives for expenses with good descriptions and add them to the plan
-      const allNewExpenses = [...personalExpensesWithIds, ...businessExpensesWithIds]
-      const expensesWithDescriptions = allNewExpenses.filter(expense => 
-        expense.description && expense.description.length > 10 && expense.willingness !== "Not Willing"
-      )
-      
-      if (expensesWithDescriptions.length > 0) {
-        setIsProcessingAlternatives(true)
-        
-        // Process alternatives for each expense
-        const updatedExpenses = [...newExpenses]
-        let processedCount = 0
-        
-        for (const expense of expensesWithDescriptions) {
-          // Update progress
-          setAlternativesProgress(Math.round((processedCount / expensesWithDescriptions.length) * 100))
-          
-          // Fetch alternatives
-          const alternatives = await fetchAlternatives(expense)
-          
-          if (alternatives && alternatives.length > 0) {
-            // Find the best alternative (highest savings)
-            const bestAlternative = alternatives.reduce((best: AlternativeProduct, current: AlternativeProduct) => 
-              current.savings > best.savings ? current : best, alternatives[0]
-            )
-            
-            // Update the expense with alternatives and select the best one
-            const expenseIndex = updatedExpenses.findIndex((e: Expense) => e.id === expense.id)
-            if (expenseIndex !== -1) {
-              updatedExpenses[expenseIndex] = {
-                ...updatedExpenses[expenseIndex],
-                alternatives: alternatives,
-                selectedAlternative: {
-                  id: bestAlternative.id,
-                  name: bestAlternative.name,
-                  price: bestAlternative.price,
-                  savings: bestAlternative.savings
-                },
-                targetAmount: bestAlternative.price,
-                willingness: "Very Willing" // Mark as very willing since we're selecting an alternative
-              }
-            }
-          }
-          
-          processedCount++
-        }
-        
-        // Save updated expenses with alternatives
-        localStorage.setItem('expenses', JSON.stringify(updatedExpenses))
-        
-        // Dispatch event to notify other components
-        window.dispatchEvent(new Event('expensesUpdated'))
-        
-        setIsProcessingAlternatives(false)
-      }
-      
-      // Show success message
-      toast({
-        title: "Setup Complete!",
-        description: "Your PayRize profile has been successfully set up and alternatives have been automatically added to your plan."
-      })
-      
-      // Navigate to the savings screen
-      window.location.href = "/savings";
-      
+      // Process the wizard data
+      processWizardData();
     } else {
       // Move to next step
-      setStep(step + 1)
+      setStep(step + 1);
     }
-  }
+  };
   
   // Handle back button click
   const handleBack = (e: React.MouseEvent) => {
@@ -613,11 +586,48 @@ export function PayRizeWizard({ open, onOpenChange }: PayRizeWizardProps) {
     }
   }
   
+  const handleExpenseChange = (index: number, field: string, value: any) => {
+    setData(prev => {
+      const expenses = currentStep === 2
+        ? [...prev.personalExpenses]
+        : [...prev.businessExpenses];
+
+      expenses[index] = {
+        ...expenses[index],
+        [field]: value
+      };
+
+      return currentStep === 2
+        ? { ...prev, personalExpenses: expenses }
+        : { ...prev, businessExpenses: expenses };
+    });
+  };
+
+  const handleExpenseCategoryChange = (index: number, category: string) => {
+    setData(prev => {
+      const expenses = currentStep === 2
+        ? [...prev.personalExpenses]
+        : [...prev.businessExpenses];
+
+      expenses[index] = {
+        ...expenses[index],
+        category
+      };
+
+      return currentStep === 2
+        ? { ...prev, personalExpenses: expenses }
+        : { ...prev, businessExpenses: expenses };
+    });
+  };
+
   return (
     <>
-      <LoadingOverlay visible={showLoadingOverlay} />
+      <LoadingOverlay 
+        visible={showLoadingOverlay} 
+        progress={isProcessingAlternatives ? alternativesProgress : loadingProgress} 
+      />
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[1000px] max-h-[90vh] overflow-y-auto">
           {!isComplete ? (
             <>
               <DialogHeader>
@@ -713,64 +723,139 @@ export function PayRizeWizard({ open, onOpenChange }: PayRizeWizardProps) {
 
                 {/* Step 3: Personal Expenses */}
                 {step === 3 && (
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     <h3 className="text-lg font-medium">Your Personal Expenses</h3>
                     
-                    <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900 rounded-md mb-4">
-                      <p className="text-sm text-blue-700 dark:text-blue-400">
+                    <div className="p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900 rounded-md mb-4">
+                      <p className="text-blue-700 dark:text-blue-400">
                         <strong>Why we need expense details:</strong> The more information you provide, the better we can find competitive alternatives that meet the same needs but at lower prices.
                       </p>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="col-span-2">
-                        <Label htmlFor="expense-name">Expense Name</Label>
-                        <Input
-                          id="expense-name"
-                          value={tempPersonalExpense.name || ""}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handlePersonalExpenseChange("name", e.target.value)}
-                          placeholder="e.g., Rent, Groceries"
-                        />
+                    {/* Reorganized form with description in its own row */}
+                    <div className="space-y-6">
+                      {/* First row - split into two columns */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-6">
+                          <div className="form-group">
+                            <Label htmlFor="expense-name">Name</Label>
+                            <Input
+                              type="text"
+                              id="expense-name"
+                              value={tempPersonalExpense.name}
+                              onChange={(e) => handlePersonalExpenseChange('name', e.target.value)}
+                              className="form-control"
+                              placeholder="e.g. Netflix"
+                            />
+                          </div>
+                          <div className="form-group">
+                            <Label htmlFor="expense-category">Category</Label>
+                            <CategoryCombobox
+                              value={tempPersonalExpense.category}
+                              onChange={(value) => handlePersonalExpenseChange('category', value)}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-6">
+                          <div className="form-group">
+                            <Label htmlFor="expense-amount">Amount</Label>
+                            <div className="relative rounded-md shadow-sm">
+                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span className="text-gray-500 sm:text-sm">$</span>
+                              </div>
+                              <Input
+                                type="number"
+                                id="expense-amount"
+                                value={tempPersonalExpense.amount || ''}
+                                onChange={(e) => handlePersonalExpenseChange('amount', parseFloat(e.target.value) || 0)}
+                                className="form-control pl-7"
+                                placeholder="0.00"
+                              />
+                            </div>
+                          </div>
+                          <div className="form-group">
+                            <Label htmlFor="expense-frequency">Frequency</Label>
+                            <select
+                              id="expense-frequency"
+                              value={tempPersonalExpense.frequency}
+                              onChange={(e) => handlePersonalExpenseChange('frequency', e.target.value)}
+                              className="form-select rounded-[9px] px-4 py-2 h-11"
+                            >
+                              <option value="Weekly">Weekly</option>
+                              <option value="Monthly">Monthly</option>
+                              <option value="Quarterly">Quarterly</option>
+                              <option value="Yearly">Yearly</option>
+                              <option value="Per Unit">Per Unit</option>
+                            </select>
+                          </div>
+                          {tempPersonalExpense.frequency === "Per Unit" && (
+                            <div className="form-group">
+                              <Label htmlFor="expense-quantity">Quantity per month</Label>
+                              <p className="text-sm text-foreground/70 mb-2">
+                                How many units do you purchase per month?
+                              </p>
+                              <Input
+                                id="expense-quantity"
+                                type="number"
+                                min="1"
+                                step="1"
+                                value={tempPersonalExpense.quantity || 1}
+                                onChange={(e) => handlePersonalExpenseChange('quantity', parseInt(e.target.value) || 1)}
+                                required
+                                placeholder="Enter quantity"
+                                className="form-control"
+                              />
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <Label htmlFor="expense-amount">Amount</Label>
-                        <Input
-                          id="expense-amount"
-                          type="number"
-                          value={tempPersonalExpense.amount || ""}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handlePersonalExpenseChange("amount", e.target.value)}
-                          placeholder="0.00"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="expense-category">Category</Label>
-                        <CategoryCombobox
-                          value={tempPersonalExpense.category || ""}
-                          onChange={(category: string) => handlePersonalExpenseChange("category", category)}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="expense-frequency">Frequency</Label>
-                        <select
-                          id="expense-frequency"
-                          value={tempPersonalExpense.frequency || "Monthly"}
-                          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handlePersonalExpenseChange("frequency", e.target.value)}
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <option value="One-time">One-time</option>
-                          <option value="Weekly">Weekly</option>
-                          <option value="Monthly">Monthly</option>
-                          <option value="Yearly">Yearly</option>
-                        </select>
-                      </div>
-                      <div className="col-span-2">
-                        <Label htmlFor="expense-description">Description (helps find alternatives)</Label>
-                        <Input
+                      
+                      {/* Second row - description takes full width */}
+                      <div className="form-group w-full">
+                        <Label htmlFor="expense-description">Description</Label>
+                        <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900 rounded-md">
+                          <p className="text-sm text-blue-700 dark:text-blue-400">
+                            Please provide detailed information about the product or service. 
+                            The more specific details you include (brand, size, features), 
+                            the better our AI can find comparable alternatives.
+                          </p>
+                        </div>
+                        <Textarea
                           id="expense-description"
-                          value={tempPersonalExpense.description || ""}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handlePersonalExpenseChange("description", e.target.value)}
-                          placeholder="e.g., Premium streaming service, 4K quality"
+                          value={tempPersonalExpense.description}
+                          onChange={(e) => handlePersonalExpenseChange('description', e.target.value)}
+                          className="form-control w-full"
+                          placeholder="Description of expense"
+                          rows={4}
                         />
+                      </div>
+                      
+                      {/* Third row - willingness and URL */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="form-group">
+                          <Label htmlFor="expense-willingness">Willingness to change</Label>
+                          <select
+                            id="expense-willingness"
+                            value={tempPersonalExpense.willingness || 'Possible'}
+                            onChange={(e) => handlePersonalExpenseChange('willingness', e.target.value)}
+                            className="form-select rounded-[9px] px-4 py-2 h-11"
+                          >
+                            <option value="Not Willing">Not Willing</option>
+                            <option value="Possible">Possible</option>
+                            <option value="Very Willing">Very Willing</option>
+                          </select>
+                        </div>
+                        <div className="form-group">
+                          <Label htmlFor="expense-url">URL (optional)</Label>
+                          <Input
+                            type="text"
+                            id="expense-url"
+                            value={tempPersonalExpense.url || ''}
+                            onChange={(e) => handlePersonalExpenseChange('url', e.target.value)}
+                            className="form-control"
+                            placeholder="https://example.com"
+                          />
+                        </div>
                       </div>
                     </div>
                     
@@ -793,7 +878,11 @@ export function PayRizeWizard({ open, onOpenChange }: PayRizeWizardProps) {
                               <div>
                                 <span className="font-medium">{expense.name}</span>
                                 <span className="text-sm text-muted-foreground ml-2">
-                                  ({formatCurrency(expense.amount)}/month)
+                                  {expense.frequency === "Per Unit" ? (
+                                    <>({formatCurrency(expense.amount)}/unit × {expense.quantity || 1} = {formatCurrency(normalizeToMonthlyAmount(expense))}/month)</>
+                                  ) : (
+                                    <>({formatCurrency(expense.amount)}/{expense.frequency.toLowerCase()})</>
+                                  )}
                                 </span>
                               </div>
                               <Button
@@ -821,64 +910,139 @@ export function PayRizeWizard({ open, onOpenChange }: PayRizeWizardProps) {
 
                 {/* Step 4: Business Expenses */}
                 {step === 4 && (
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium">Your Business Expenses (Optional)</h3>
+                  <div className="space-y-6">
+                    <h3 className="text-lg font-medium">Your Business Expenses</h3>
                     
-                    <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900 rounded-md mb-4">
-                      <p className="text-sm text-blue-700 dark:text-blue-400">
-                        <strong>Why we need expense details:</strong> Detailed descriptions help us find competitive business alternatives that offer similar features but at better prices.
+                    <div className="p-4 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-100 dark:border-yellow-900 rounded-md mb-4">
+                      <p className="text-yellow-700 dark:text-yellow-400">
+                        <strong>Optional Section:</strong> Add any business expenses that you'd like to optimize. This is optional - you can skip if you don't have business expenses.
                       </p>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="col-span-2">
-                        <Label htmlFor="business-expense-name">Expense Name</Label>
-                        <Input
-                          id="business-expense-name"
-                          value={tempBusinessExpense.name || ""}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleBusinessExpenseChange("name", e.target.value)}
-                          placeholder="e.g., Office Rent, Software"
-                        />
+                    {/* Reorganized form with description in its own row */}
+                    <div className="space-y-6">
+                      {/* First row - split into two columns */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-6">
+                          <div className="form-group">
+                            <Label htmlFor="business-expense-name">Name</Label>
+                            <Input
+                              type="text"
+                              id="business-expense-name"
+                              value={tempBusinessExpense.name}
+                              onChange={(e) => handleBusinessExpenseChange('name', e.target.value)}
+                              className="form-control"
+                              placeholder="e.g. Office Rent"
+                            />
+                          </div>
+                          <div className="form-group">
+                            <Label htmlFor="business-expense-category">Category</Label>
+                            <CategoryCombobox
+                              value={tempBusinessExpense.category}
+                              onChange={(value) => handleBusinessExpenseChange('category', value)}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-6">
+                          <div className="form-group">
+                            <Label htmlFor="business-expense-amount">Amount</Label>
+                            <div className="relative rounded-md shadow-sm">
+                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span className="text-gray-500 sm:text-sm">$</span>
+                              </div>
+                              <Input
+                                type="number"
+                                id="business-expense-amount"
+                                value={tempBusinessExpense.amount || ''}
+                                onChange={(e) => handleBusinessExpenseChange('amount', parseFloat(e.target.value) || 0)}
+                                className="form-control pl-7"
+                                placeholder="0.00"
+                              />
+                            </div>
+                          </div>
+                          <div className="form-group">
+                            <Label htmlFor="business-expense-frequency">Frequency</Label>
+                            <select
+                              id="business-expense-frequency"
+                              value={tempBusinessExpense.frequency}
+                              onChange={(e) => handleBusinessExpenseChange('frequency', e.target.value)}
+                              className="form-select rounded-[9px] px-4 py-2 h-11"
+                            >
+                              <option value="Weekly">Weekly</option>
+                              <option value="Monthly">Monthly</option>
+                              <option value="Quarterly">Quarterly</option>
+                              <option value="Yearly">Yearly</option>
+                              <option value="Per Unit">Per Unit</option>
+                            </select>
+                          </div>
+                          {tempBusinessExpense.frequency === "Per Unit" && (
+                            <div className="form-group">
+                              <Label htmlFor="business-expense-quantity">Quantity per month</Label>
+                              <p className="text-sm text-foreground/70 mb-2">
+                                How many units do you purchase per month?
+                              </p>
+                              <Input
+                                id="business-expense-quantity"
+                                type="number"
+                                min="1"
+                                step="1"
+                                value={tempBusinessExpense.quantity || 1}
+                                onChange={(e) => handleBusinessExpenseChange('quantity', parseInt(e.target.value) || 1)}
+                                required
+                                placeholder="Enter quantity"
+                                className="form-control"
+                              />
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <Label htmlFor="business-expense-amount">Amount</Label>
-                        <Input
-                          id="business-expense-amount"
-                          type="number"
-                          value={tempBusinessExpense.amount || ""}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleBusinessExpenseChange("amount", e.target.value)}
-                          placeholder="0.00"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="business-expense-category">Category</Label>
-                        <CategoryCombobox
-                          value={tempBusinessExpense.category || ""}
-                          onChange={(category: string) => handleBusinessExpenseChange("category", category)}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="business-expense-frequency">Frequency</Label>
-                        <select
-                          id="business-expense-frequency"
-                          value={tempBusinessExpense.frequency || "Monthly"}
-                          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleBusinessExpenseChange("frequency", e.target.value)}
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <option value="One-time">One-time</option>
-                          <option value="Weekly">Weekly</option>
-                          <option value="Monthly">Monthly</option>
-                          <option value="Yearly">Yearly</option>
-                        </select>
-                      </div>
-                      <div className="col-span-2">
-                        <Label htmlFor="business-expense-description">Description (helps find alternatives)</Label>
-                        <Input
+                      
+                      {/* Second row - description takes full width */}
+                      <div className="form-group w-full">
+                        <Label htmlFor="business-expense-description">Description</Label>
+                        <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900 rounded-md">
+                          <p className="text-sm text-blue-700 dark:text-blue-400">
+                            Please provide detailed information about the product or service. 
+                            The more specific details you include (brand, size, features), 
+                            the better our AI can find comparable alternatives.
+                          </p>
+                        </div>
+                        <Textarea
                           id="business-expense-description"
-                          value={tempBusinessExpense.description || ""}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleBusinessExpenseChange("description", e.target.value)}
-                          placeholder="e.g., Cloud hosting with 8GB RAM, 4 CPUs"
+                          value={tempBusinessExpense.description}
+                          onChange={(e) => handleBusinessExpenseChange('description', e.target.value)}
+                          className="form-control w-full"
+                          placeholder="Description of expense"
+                          rows={4}
                         />
+                      </div>
+                      
+                      {/* Third row - willingness and URL */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="form-group">
+                          <Label htmlFor="business-expense-willingness">Willingness to change</Label>
+                          <select
+                            id="business-expense-willingness"
+                            value={tempBusinessExpense.willingness || 'Possible'}
+                            onChange={(e) => handleBusinessExpenseChange('willingness', e.target.value)}
+                            className="form-select rounded-[9px] px-4 py-2 h-11"
+                          >
+                            <option value="Not Willing">Not Willing</option>
+                            <option value="Possible">Possible</option>
+                            <option value="Very Willing">Very Willing</option>
+                          </select>
+                        </div>
+                        <div className="form-group">
+                          <Label htmlFor="business-expense-url">URL (optional)</Label>
+                          <Input
+                            type="text"
+                            id="business-expense-url"
+                            value={tempBusinessExpense.url || ''}
+                            onChange={(e) => handleBusinessExpenseChange('url', e.target.value)}
+                            className="form-control"
+                            placeholder="https://example.com"
+                          />
+                        </div>
                       </div>
                     </div>
                     
@@ -901,7 +1065,11 @@ export function PayRizeWizard({ open, onOpenChange }: PayRizeWizardProps) {
                               <div>
                                 <span className="font-medium">{expense.name}</span>
                                 <span className="text-sm text-muted-foreground ml-2">
-                                  ({formatCurrency(expense.amount)}/month)
+                                  {expense.frequency === "Per Unit" ? (
+                                    <>({formatCurrency(expense.amount)}/unit × {expense.quantity || 1} = {formatCurrency(normalizeToMonthlyAmount(expense))}/month)</>
+                                  ) : (
+                                    <>({formatCurrency(expense.amount)}/{expense.frequency.toLowerCase()})</>
+                                  )}
                                 </span>
                               </div>
                               <Button
@@ -1095,5 +1263,5 @@ export function PayRizeWizard({ open, onOpenChange }: PayRizeWizardProps) {
         </DialogContent>
       </Dialog>
     </>
-  )
+  );
 } 

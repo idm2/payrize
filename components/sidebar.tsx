@@ -13,7 +13,9 @@ import {
   Settings,
   X,
   Menu,
-  Tags
+  Tags,
+  FolderOpen,
+  List
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -21,6 +23,7 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { ModeToggle } from "@/components/mode-toggle"
+import { Separator } from "@/components/ui/separator"
 
 interface NavProps {
   isCollapsed: boolean
@@ -125,6 +128,12 @@ export function Sidebar() {
       href: "/",
     },
     {
+      title: "Plans",
+      icon: FolderOpen,
+      variant: pathname === "/plans" ? "default" : "ghost",
+      href: "/plans",
+    },
+    {
       title: "Expenses",
       icon: CreditCard,
       variant: pathname === "/expenses" ? "default" : "ghost",
@@ -150,7 +159,7 @@ export function Sidebar() {
     },
     {
       title: "Categories",
-      icon: Tags,
+      icon: List,
       variant: pathname === "/categories" ? "default" : "ghost",
       href: "/categories",
     },
